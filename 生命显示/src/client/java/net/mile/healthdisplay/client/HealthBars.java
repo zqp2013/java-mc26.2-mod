@@ -52,6 +52,9 @@ final class HealthBars {
 		Vector3f right = new Vector3f(1.0F, 0.0F, 0.0F).rotate(camera.orientation);
 		Vector3f up = new Vector3f(0.0F, 1.0F, 0.0F).rotate(camera.orientation);
 
+		// 每帧对比血量快照,检测到掉血就冒伤害数字
+		DamageNumbers.track(level, minecraft.player, camera.pos);
+
 		DrawableGizmoPrimitives primitives = new DrawableGizmoPrimitives();
 
 		for (Entity entity : level.entitiesForRendering()) {
@@ -98,11 +101,23 @@ final class HealthBars {
 			Vec3 toCamera = new Vec3(camera.pos.x - center.x, camera.pos.y - center.y, camera.pos.z - center.z)
 					.normalize();
 			Vec3 textPos = center.add(toCamera.scale(TEXT_LIFT));
-			primitives.addText(textPos, (int) Math.ceil(health) + "/" + (int) maxHealth,
+			primitives.addText(textPos, formatHealth(health) + "/" + formatHealth(maxHealth),
 					TextGizmo.Style.forColorAndCentered(0xFFFFFFFF).withScale(TEXT_SCALE));
 		}
 
+		// 一并画伤害数字,同一次提交
+		DamageNumbers.render(primitives, camera);
+
 		// false = 正常深度测试:隔着墙看不到(不作弊)
 		primitives.submit(context.submitNodeCollector(), camera, false);
+	}
+
+	/** 血量精确到十分位:3.0 显示"3",3.5 显示"3.5"(伤害数字也用同一格式) */
+	static String formatHealth(float value) {
+		float rounded = Math.round(value * 10.0F) / 10.0F;
+		if (rounded == Math.floor(rounded)) {
+			return String.valueOf((int) rounded);
+		}
+		return String.valueOf(rounded);
 	}
 }
