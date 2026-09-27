@@ -25,8 +25,10 @@ import java.util.Optional;
 
 /**
  * 超级熔炉方块实体:燃料池共享(burnTime 一个池子),等级 L = 同时烧 L 个物品,
- * "炉口"轮流分配到各个有料可烧的输入槽上,燃料按同时烧的个数倍速消耗。
+ * "炉口"轮流分配到各个有料可烧的输入槽上。
  * 全批共用一条烧炼进度,一批完成时一起出成品。
+ * 燃料:单个物品的烧炼成本恒为 200 刻(原版 BURN_TIME_STANDARD),
+ * 炉子再快、同时烧得再多,一根木头也只烧 1.5 个、一个煤只烧 8 个。
  */
 public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity {
 	private final FurnaceTier tier;
@@ -41,6 +43,8 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity {
 	private int furnaceLevel;
 	/** 当前实际同时烧的个数(料不够等级时小于等级,同步给界面显示) */
 	private int burningCount;
+	/** 燃料小数消耗的余数累加器(每刻应耗 burning*200/cookTicks,整数化后漏的部分记在这里) */
+	private int fuelRemainder;
 
 	private final ContainerData dataAccess = new ContainerData() {
 		@Override
@@ -252,8 +256,17 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity {
 		// 4. 推进烧炼(全批共用一条进度,一批同时完成)
 		boolean hasFuel = furnace.burnTime > 0;
 		if (hasFuel) {
-			// 同时烧 N 个物品 = 燃料 N 倍速消耗,单个物品的燃料成本不变
-			furnace.burnTime = Math.max(0, furnace.burnTime - burning);
+			// 单物品烧炼成本恒为 200 刻(原版标准):同时烧 N 个 → 每刻耗 N*200/cookTicks。
+			// 整数除法会漏耗(如铜炉 200/160=1.25),用余数累加器补齐,平均速率才精确
+			int drain;
+			if (burning > 0) {
+				furnace.fuelRemainder += burning * 200;
+				drain = furnace.fuelRemainder / tier.cookTicks;
+				furnace.fuelRemainder %= tier.cookTicks;
+			} else {
+				drain = 1; // 空烧也照原版 1/刻 慢慢耗
+			}
+			furnace.burnTime = Math.max(0, furnace.burnTime - drain);
 			if (burning > 0) {
 				furnace.progress++;
 				if (furnace.progress >= tier.cookTicks) {
