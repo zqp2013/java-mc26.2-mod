@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "superfurnace:block/gold_furnace_front_on",
+    "side": "superfurnace:block/gold_furnace_side",
+    "top": "superfurnace:block/gold_furnace_top"
+  }
+}
