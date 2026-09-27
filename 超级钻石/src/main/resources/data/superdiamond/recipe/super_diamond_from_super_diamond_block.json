@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    "superdiamond:super_diamond_block"
+  ],
+  "result": {
+    "id": "superdiamond:super_diamond",
+    "count": 9
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "superdiamond:super_netherite"
+      }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "superdiamond:super_netherite"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "superdiamond:super_netherite"
+      }
+    ]
+  }
+}

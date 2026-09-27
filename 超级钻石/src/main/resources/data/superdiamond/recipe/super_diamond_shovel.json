@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "#": "minecraft:stick",
+    "X": "superdiamond:super_diamond"
+  },
+  "pattern": [
+        "X",    "#",    "#"
+  ],
+  "result": {
+    "id": "superdiamond:super_diamond_shovel"
+  }
+}

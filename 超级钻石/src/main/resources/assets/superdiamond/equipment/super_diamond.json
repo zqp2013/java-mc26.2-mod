@@ -1,0 +1,19 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "superdiamond:super_diamond"
+      }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "superdiamond:super_diamond"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "superdiamond:super_diamond"
+      }
+    ]
+  }
+}

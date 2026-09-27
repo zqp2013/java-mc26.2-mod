@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "superdiamond:super_netherite_ingot",
+  "base": "superdiamond:super_diamond_sword",
+  "result": {
+    "id": "superdiamond:super_netherite_sword"
+  },
+  "template": "superdiamond:super_netherite_upgrade_smithing_template"
+}
