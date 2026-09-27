@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "healthdisplay",
+	"version": "1.0.0",
+	"name": "生命显示",
+	"description": "在生物头顶显示血条:血条里写着 当前生命/最大生命,颜色从满血的绿色随血量降低逐渐变成红色。",
+	"authors": [
+		"qpzhou"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"environment": "*",
+	"entrypoints": {
+		"client": [
+			"net.mile.healthdisplay.client.HealthDisplayClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
