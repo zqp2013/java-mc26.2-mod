@@ -40,11 +40,13 @@ public class ChainMinerClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(SyncSettingsPayload.TYPE, (payload, context) -> {
 			ChainMinerClientData.setMax(payload.max());
 			ChainMinerClientData.setVacuumToPlayer(payload.vacuumToPlayer());
+			ChainMinerClientData.setWarnWrongTier(payload.warnWrongTier());
 		});
 
 		// Ctrl+右键(对准方块):打开连锁挖掘设置界面
+		// (按 Shift 时放行——Ctrl+Shift+右键留给高亮显示的设置界面,两个模组同手势会打架)
 		UseBlockCallback.EVENT.register((player, level, hand, hitResult) -> {
-			if (hand == InteractionHand.MAIN_HAND && isCtrlKeyDown()) {
+			if (hand == InteractionHand.MAIN_HAND && isCtrlKeyDown() && !isShiftKeyDown()) {
 				openConfigScreen();
 				return InteractionResult.SUCCESS;
 			}
@@ -53,12 +55,18 @@ public class ChainMinerClient implements ClientModInitializer {
 
 		// Ctrl+右键(对准空气):同上
 		UseItemCallback.EVENT.register((player, level, hand) -> {
-			if (hand == InteractionHand.MAIN_HAND && isCtrlKeyDown()) {
+			if (hand == InteractionHand.MAIN_HAND && isCtrlKeyDown() && !isShiftKeyDown()) {
 				openConfigScreen();
 				return InteractionResult.SUCCESS;
 			}
 			return InteractionResult.PASS;
 		});
+	}
+
+	private static boolean isShiftKeyDown() {
+		Window window = Minecraft.getInstance().getWindow();
+		return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_SHIFT)
+				|| InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_SHIFT);
 	}
 
 	private static boolean isCtrlKeyDown() {
@@ -73,8 +81,8 @@ public class ChainMinerClient implements ClientModInitializer {
 		Minecraft.getInstance().gui.setScreen(new ChainMinerConfigScreen());
 	}
 
-	static void sendSettings(int max, boolean vacuumToPlayer) {
-		ClientPlayNetworking.send(new UpdateSettingsPayload(max, vacuumToPlayer));
+	static void sendSettings(int max, boolean vacuumToPlayer, boolean warnWrongTier) {
+		ClientPlayNetworking.send(new UpdateSettingsPayload(max, vacuumToPlayer, warnWrongTier));
 	}
 
 	static void sendUndo() {

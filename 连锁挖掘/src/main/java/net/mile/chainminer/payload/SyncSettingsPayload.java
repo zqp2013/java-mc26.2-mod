@@ -7,7 +7,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /** 服务端 → 客户端:同步连锁挖掘设置当前值。 */
-public record SyncSettingsPayload(int max, boolean vacuumToPlayer) implements CustomPacketPayload {
+public record SyncSettingsPayload(int max, boolean vacuumToPlayer, boolean warnWrongTier) implements CustomPacketPayload {
 	public static final CustomPacketPayload.Type<SyncSettingsPayload> TYPE =
 			new CustomPacketPayload.Type<>(ChainMinerMod.id("sync_settings"));
 
@@ -17,10 +17,11 @@ public record SyncSettingsPayload(int max, boolean vacuumToPlayer) implements Cu
 	private static void write(RegistryFriendlyByteBuf buf, SyncSettingsPayload payload) {
 		buf.writeVarInt(payload.max);
 		buf.writeBoolean(payload.vacuumToPlayer);
+		buf.writeBoolean(payload.warnWrongTier);
 	}
 
 	private static SyncSettingsPayload read(RegistryFriendlyByteBuf buf) {
-		return new SyncSettingsPayload(buf.readVarInt(), buf.readBoolean());
+		return new SyncSettingsPayload(buf.readVarInt(), buf.readBoolean(), buf.readBoolean());
 	}
 
 	@Override

@@ -5,9 +5,11 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"DragonFireballMixin",
+		"EnderDragonFightMixin",
 		"EnderDragonMixin",
 		"EndSpikeFeatureMixin",
 		"EntityMixin",
+		"ItemEntityMixin",
 		"LivingEntityMixin",
 		"WardenMixin",
 		"WitherBossMixin",

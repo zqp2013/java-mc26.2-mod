@@ -51,6 +51,8 @@ class TargetInfoPanel implements HudElement {
 	private static final int ICON_LINE_HEIGHT = 17;
 	/** 小字号行的行高(缩小到 0.75 后约 7px + 1px 间距) */
 	private static final int SMALL_LINE_HEIGHT = 8;
+	/** 进度条行高(条 5px + 上下各 1px 间距) */
+	private static final int BAR_LINE_HEIGHT = 7;
 	/** 图标与文字的间距 */
 	private static final int ICON_TEXT_GAP = 3;
 	/** 信息行的文字缩放(比默认字号小一圈) */
@@ -67,9 +69,13 @@ class TargetInfoPanel implements HudElement {
 	/** 这些整型属性按 "当前/最大" 展示生长进度 */
 	private static final Set<String> GROWTH_INT_PROPERTIES = Set.of("age", "stage", "hatch");
 
-	/** small = 用 0.75 缩放的小字渲染(名称行除外) */
-	private record Line(String text, int color, ItemStack icon, boolean small) {
+	/** small = 用 0.75 缩放的小字渲染(名称行除外);bar >= 0 时在文字下画一根进度条 */
+	private record Line(String text, int color, ItemStack icon, boolean small, float bar) {
 	}
+
+	/** 正在挖的方块位置与已挖 tick 数(目标/松开左键就重置) */
+	private BlockPos miningPos;
+	private float miningTicks;
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor gui, DeltaTracker deltaTracker) {
@@ -85,7 +91,7 @@ class TargetInfoPanel implements HudElement {
 			return;
 		}
 		List<Line> lines = switch (hit.getType()) {
-			case BLOCK -> blockLines(minecraft, (BlockHitResult) hit);
+			case BLOCK -> blockLines(minecraft, (BlockHitResult) hit, deltaTracker.getRealtimeDeltaTicks());
 			case ENTITY -> entityLines((EntityHitResult) hit, minecraft.font);
 			default -> List.of();
 		};
@@ -119,7 +125,7 @@ class TargetInfoPanel implements HudElement {
 
 	// ---------- 方块 ----------
 
-	private List<Line> blockLines(Minecraft minecraft, BlockHitResult hit) {
+	private List<Line> blockLines(Minecraft minecraft, BlockHitResult hit, float deltaTicks) {
 		ClientLevel level = minecraft.level;
 		BlockPos pos = hit.getBlockPos();
 		BlockState state = level.getBlockState(pos);
@@ -127,11 +133,87 @@ class TargetInfoPanel implements HudElement {
 
 		List<Line> lines = new ArrayList<>();
 		ItemStack icon = new ItemStack(block.asItem());
-		lines.add(new Line(block.getName().getString(), NAME_COLOR, icon.isEmpty() ? null : icon, false));
-		lines.add(new Line(String.valueOf(BuiltInRegistries.BLOCK.getKey(block)), ID_COLOR, null, true));
-		lines.addAll(propertyLines(minecraft.font, state, block));
-		lines.addAll(packLines(minecraft.font, blockInfoTokens(minecraft, level, hit, pos, state), INFO_COLOR));
+		lines.add(new Line(block.getName().getString(), NAME_COLOR, icon.isEmpty() ? null : icon, false, -1.0F));
+		if (HighlightConfig.isShowId()) {
+			lines.add(new Line(String.valueOf(BuiltInRegistries.BLOCK.getKey(block)), ID_COLOR, null, true, -1.0F));
+		}
+		if (HighlightConfig.isShowState()) {
+			lines.addAll(propertyLines(minecraft.font, state, block));
+		}
+		if (HighlightConfig.isShowTier()) {
+			Line tier = tierLine(state);
+			if (tier != null) {
+				lines.add(tier);
+			}
+		}
+		if (HighlightConfig.isShowInfo()) {
+			lines.addAll(packLines(minecraft.font, blockInfoTokens(minecraft, level, hit, pos, state), INFO_COLOR));
+		}
+		if (HighlightConfig.isShowProgress()) {
+			Line progress = miningProgressLine(minecraft, level, pos, state, deltaTicks);
+			if (progress != null) {
+				lines.add(progress);
+			}
+		}
 		return lines;
+	}
+
+	/** 挖掘等级行:按方块需求的工具等级画对应镐子图标(如铁镐及以上显示铁镐) */
+	private Line tierLine(BlockState state) {
+		ItemStack icon;
+		String label;
+		if (state.is(net.minecraft.tags.BlockTags.NEEDS_DIAMOND_TOOL)) {
+			icon = new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);
+			label = "钻石镐及以上";
+		} else if (state.is(net.minecraft.tags.BlockTags.NEEDS_IRON_TOOL)) {
+			icon = new ItemStack(net.minecraft.world.item.Items.IRON_PICKAXE);
+			label = "铁镐及以上";
+		} else if (state.is(net.minecraft.tags.BlockTags.NEEDS_STONE_TOOL)) {
+			icon = new ItemStack(net.minecraft.world.item.Items.STONE_PICKAXE);
+			label = "石镐及以上";
+		} else if (state.requiresCorrectToolForDrops()) {
+			icon = new ItemStack(net.minecraft.world.item.Items.WOODEN_PICKAXE);
+			label = "木镐及以上";
+		} else {
+			return null; // 手挖也掉落,不显示等级行
+		}
+		return new Line("挖掘等级 " + label, INFO_COLOR, icon, true, -1.0F);
+	}
+
+	/** 挖掘进度行:挖同一格时累计,换目标或松手重置;显示 已挖秒数/总共要几秒/百分比 + 进度条 */
+	private Line miningProgressLine(Minecraft minecraft, ClientLevel level, BlockPos pos, BlockState state, float deltaTicks) {
+		boolean attacking = minecraft.options.keyAttack.isDown();
+		// 探测距离有 32 格,但原版只能挖 4.5 格内的方块:够不着的方块按住左键也挖不动,
+		// 进度条不能走(修复:对远处方块也触发进度条的 bug)
+		if (!attacking || !canReach(minecraft, pos)) {
+			this.miningPos = null;
+			this.miningTicks = 0.0F;
+			return null;
+		}
+		if (!pos.equals(this.miningPos)) {
+			this.miningPos = pos;
+			this.miningTicks = 0.0F;
+		}
+		float perTick = state.getDestroyProgress(minecraft.player, level, pos);
+		if (perTick <= 0.0F) {
+			return null; // 挖不动的方块不显示
+		}
+		this.miningTicks += deltaTicks;
+		float totalTicks = 1.0F / perTick;
+		float fraction = Math.min(1.0F, this.miningTicks / totalTicks);
+		String text = String.format(Locale.ROOT, "挖掘进度 %.1f秒/%.1f秒 已挖%.0f%%",
+				this.miningTicks / 20.0F, totalTicks / 20.0F, fraction * 100.0F);
+		return new Line(text, INFO_COLOR, null, true, fraction);
+	}
+
+	/** 眼睛到方块包围盒的最近距离是否在原版可交互范围内(生存约 4.5 格) */
+	private boolean canReach(Minecraft minecraft, BlockPos pos) {
+		Vec3 eye = minecraft.player.getEyePosition();
+		double dx = Math.max(Math.max(pos.getX() - eye.x, 0.0), eye.x - (pos.getX() + 1));
+		double dy = Math.max(Math.max(pos.getY() - eye.y, 0.0), eye.y - (pos.getY() + 1));
+		double dz = Math.max(Math.max(pos.getZ() - eye.z, 0.0), eye.z - (pos.getZ() + 1));
+		double range = minecraft.player.blockInteractionRange();
+		return dx * dx + dy * dy + dz * dz <= range * range;
 	}
 
 	/** 把全部方块状态格式化成中文,每行竖排 2-3 条 */
@@ -161,7 +243,7 @@ class TargetInfoPanel implements HudElement {
 			}
 			String candidate = current + SEPARATOR + token;
 			if (count + 1 > MAX_TOKENS_PER_LINE || font.width(candidate) * SMALL_SCALE > MAX_SMALL_LINE_WIDTH) {
-				lines.add(new Line(current.toString(), color, null, true));
+				lines.add(new Line(current.toString(), color, null, true, -1.0F));
 				current = new StringBuilder(token);
 				count = 1;
 			} else {
@@ -170,7 +252,7 @@ class TargetInfoPanel implements HudElement {
 			}
 		}
 		if (!current.isEmpty()) {
-			lines.add(new Line(current.toString(), color, null, true));
+			lines.add(new Line(current.toString(), color, null, true, -1.0F));
 		}
 		return lines;
 	}
@@ -217,8 +299,8 @@ class TargetInfoPanel implements HudElement {
 	private List<Line> entityLines(EntityHitResult hit, Font font) {
 		Entity entity = hit.getEntity();
 		List<Line> lines = new ArrayList<>();
-		lines.add(new Line(entity.getDisplayName().getString(), NAME_COLOR, null, false));
-		lines.add(new Line(String.valueOf(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType())), ID_COLOR, null, true));
+		lines.add(new Line(entity.getDisplayName().getString(), NAME_COLOR, null, false, -1.0F));
+		lines.add(new Line(String.valueOf(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType())), ID_COLOR, null, true, -1.0F));
 
 		List<String> parts = new ArrayList<>();
 		if (entity instanceof LivingEntity living) {
@@ -241,17 +323,21 @@ class TargetInfoPanel implements HudElement {
 	private void render(GuiGraphicsExtractor gui, Font font, List<Line> lines) {
 		int screenWidth = gui.guiWidth();
 
-		// 面板宽 = 最宽的一行(含图标;小字行按缩放后的宽度算)
+		// 面板宽 = 最宽的一行(含图标,图标行文字按原字号算;小字行按缩放后的宽度算)
 		int panelWidth = 0;
 		for (Line line : lines) {
-			int w = (int) (font.width(line.text()) * (line.small() ? SMALL_SCALE : 1.0F))
-					+ (line.icon() != null ? 16 + ICON_TEXT_GAP : 0);
+			int w = line.icon() != null
+					? 16 + ICON_TEXT_GAP + font.width(line.text())
+					: (int) (font.width(line.text()) * (line.small() ? SMALL_SCALE : 1.0F));
 			panelWidth = Math.max(panelWidth, w);
 		}
 
 		int totalHeight = 0;
 		for (Line line : lines) {
 			totalHeight += line.icon() != null ? ICON_LINE_HEIGHT : line.small() ? SMALL_LINE_HEIGHT : TEXT_LINE_HEIGHT;
+			if (line.bar() >= 0.0F) {
+				totalHeight += BAR_LINE_HEIGHT;
+			}
 		}
 
 		// 背景板(屏幕顶部中间)
@@ -279,6 +365,14 @@ class TargetInfoPanel implements HudElement {
 				gui.text(font, line.text(), 0, 0, line.color(), true);
 				gui.pose().popMatrix();
 				y += SMALL_LINE_HEIGHT;
+				if (line.bar() >= 0.0F) {
+					// 挖掘进度条:深底 + 绿色已挖部分
+					int barWidth = Math.max(40, panelWidth - 12);
+					int barX = screenWidth / 2 - barWidth / 2;
+					gui.fill(barX - 1, y, barX + barWidth + 1, y + 6, 0xFF222222);
+					gui.fill(barX, y + 1, barX + Math.max(1, (int) (barWidth * line.bar())), y + 5, 0xFF3CE03C);
+					y += BAR_LINE_HEIGHT;
+				}
 			} else {
 				int startX = screenWidth / 2 - font.width(line.text()) / 2;
 				gui.text(font, line.text(), startX, y + 1, line.color(), true);

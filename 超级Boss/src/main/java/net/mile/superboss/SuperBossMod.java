@@ -2,6 +2,7 @@ package net.mile.superboss;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
 import net.minecraft.network.chat.Component;
@@ -24,6 +25,10 @@ public class SuperBossMod implements ModInitializer {
 	public void onInitialize() {
 		// 推进末影弹雨的下落模拟
 		ServerTickEvents.END_SERVER_TICK.register(server -> DragonBulletRain.tick());
+
+		// 进度判定:进末地 / 三星汇聚 / 三杀 / 柱子黑曜石计数
+		ServerTickEvents.END_SERVER_TICK.register(server -> BossProgress.tick(server));
+		PlayerBlockBreakEvents.AFTER.register(BossProgress::afterBlockBreak);
 
 		// 进世界时提示 zym制造
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->

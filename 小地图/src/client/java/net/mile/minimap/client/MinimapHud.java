@@ -11,9 +11,8 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
-/** 右上角小地图 HUD:128×128 像素,每像素 0.5 格(共显示 64×64 格),北朝上,玩家箭头随视角旋转 */
+/** 右上角小地图 HUD:边长可在地图界面调(64~160,默认 96),每像素 0.5 格,北朝上,玩家箭头随视角旋转 */
 public final class MinimapHud {
-	private static final int SIZE = MinimapTextures.MINIMAP_SIZE;
 	/** 每格占多少像素 */
 	private static final float PX_PER_BLOCK = 2.0F;
 
@@ -59,15 +58,17 @@ public final class MinimapHud {
 		}
 
 		Font font = mc.font;
-		int x = mc.getWindow().getGuiScaledWidth() - SIZE - 4;
+		int size = MinimapStore.hudSize;
+		int x = mc.getWindow().getGuiScaledWidth() - size - 4;
 		int y = 4;
 
-		// 黑色描边底
-		g.fill(x - 1, y - 1, x + SIZE + 1, y + SIZE + 1, 0xCC000000);
-		g.blit(RenderPipelines.GUI_TEXTURED, MinimapTextures.MINIMAP_ID, x, y, 0.0F, 0.0F, SIZE, SIZE, SIZE, SIZE);
+		// 黑色描边底(贴图按最大边长分配,只画 hudSize 的子区域)
+		g.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0xCC000000);
+		g.blit(RenderPipelines.GUI_TEXTURED, MinimapTextures.MINIMAP_ID, x, y, 0.0F, 0.0F,
+				size, size, MinimapTextures.MINIMAP_MAX, MinimapTextures.MINIMAP_MAX);
 
-		int cx = x + SIZE / 2;
-		int cy = y + SIZE / 2;
+		int cx = x + size / 2;
+		int cy = y + size / 2;
 		String dim = mc.level.dimension().identifier().toString();
 
 		// 死亡点(红 X)
@@ -104,6 +105,10 @@ public final class MinimapHud {
 
 		// 北向标记
 		g.text(font, "N", cx - font.width("N") / 2 + 1, y + 1, 0xFFFFFF66, true);
+		// 洞穴层提示(在矿洞里时显示)
+		if (MapData.isCaveMode()) {
+			g.text(font, "地下", x + 2, y + 1, 0xFF66CCFF, true);
+		}
 	}
 
 	private static boolean moved(Vec3 pos) {
@@ -115,12 +120,13 @@ public final class MinimapHud {
 
 	private static void rebuild(Minecraft mc, Vec3 pos) {
 		NativeImage img = MinimapTextures.minimap();
+		int size = MinimapStore.hudSize;
 		int baseX = Mth.floor(pos.x);
 		int baseZ = Mth.floor(pos.z);
-		for (int py = 0; py < SIZE; py++) {
-			for (int px = 0; px < SIZE; px++) {
-				int bx = baseX + (px - SIZE / 2 + 1) / 2;
-				int bz = baseZ + (py - SIZE / 2 + 1) / 2;
+		for (int py = 0; py < size; py++) {
+			for (int px = 0; px < size; px++) {
+				int bx = baseX + (px - size / 2 + 1) / 2;
+				int bz = baseZ + (py - size / 2 + 1) / 2;
 				img.setPixel(px, py, MapData.color(mc.level, bx, bz));
 			}
 		}
@@ -134,7 +140,7 @@ public final class MinimapHud {
 	private static int[] clampOffset(double worldX, double worldZ) {
 		int ox = (int) Math.round(worldX * PX_PER_BLOCK);
 		int oz = (int) Math.round(worldZ * PX_PER_BLOCK);
-		int half = SIZE / 2 - 3;
+		int half = MinimapStore.hudSize / 2 - 3;
 		return new int[] { Mth.clamp(ox, -half, half), Mth.clamp(oz, -half, half) };
 	}
 }

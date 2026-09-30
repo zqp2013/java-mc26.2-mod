@@ -21,6 +21,9 @@ public class ChainMinerMod implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		// 注册累计连锁挖掘统计 + 进度
+		ChainMinerAdvancements.init();
+
 		// 双向数据包注册(两侧都要注册编解码器)
 		PayloadTypeRegistry.serverboundPlay().register(UpdateSettingsPayload.TYPE, UpdateSettingsPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(SyncSettingsPayload.TYPE, SyncSettingsPayload.CODEC);
@@ -32,14 +35,17 @@ public class ChainMinerMod implements ModInitializer {
 
 		// 客户端在设置界面保存新设置
 		ServerPlayNetworking.registerGlobalReceiver(UpdateSettingsPayload.TYPE, (payload, context) -> {
-			ChainSettings clamped = ChainMinerConfig.set(context.player(), payload.max(), payload.vacuumToPlayer());
-			ServerPlayNetworking.send(context.player(), new SyncSettingsPayload(clamped.max(), clamped.vacuumToPlayer()));
+			ChainSettings clamped = ChainMinerConfig.set(context.player(), payload.max(),
+					payload.vacuumToPlayer(), payload.warnWrongTier());
+			ServerPlayNetworking.send(context.player(), new SyncSettingsPayload(clamped.max(),
+					clamped.vacuumToPlayer(), clamped.warnWrongTier()));
 		});
 
 		// 玩家进服时同步当前设置(设置持久化在 config/chainminer-settings.txt)
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ChainSettings settings = ChainMinerConfig.get(handler.player);
-			ServerPlayNetworking.send(handler.player, new SyncSettingsPayload(settings.max(), settings.vacuumToPlayer()));
+			ServerPlayNetworking.send(handler.player, new SyncSettingsPayload(settings.max(),
+					settings.vacuumToPlayer(), settings.warnWrongTier()));
 		});
 
 		ChainMining.register();

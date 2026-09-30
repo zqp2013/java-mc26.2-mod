@@ -27,10 +27,14 @@ public final class SuperBossEffects {
 	private SuperBossEffects() {
 	}
 
-	/** 给目标随机施加 min~max 种不重复的负面效果。 */
-	public static void applyRandomHarmfulEffects(LivingEntity target, int min, int max) {
+	/**
+	 * 给目标随机施加 min~max 种不重复的负面效果。
+	 * 瞬间伤害必为 II 级(瞬间伤害2),其余 I 级。
+	 * 返回实际施加的数量,以及是否包含瞬间伤害 II(用 {@link Result} 包装)。
+	 */
+	public static Result applyRandomHarmfulEffects(LivingEntity target, int min, int max) {
 		if (HARMFUL_EFFECTS.isEmpty() || !target.isAlive()) {
-			return;
+			return new Result(0, false);
 		}
 		RandomSource random = target.getRandom();
 		int count = Math.min(min + random.nextInt(max - min + 1), HARMFUL_EFFECTS.size());
@@ -46,8 +50,22 @@ public final class SuperBossEffects {
 
 		int duration = SuperBossConfig.WARDEN_SONIC_EFFECT_DURATION_BASE
 				+ random.nextInt(SuperBossConfig.WARDEN_SONIC_EFFECT_DURATION_BONUS + 1);
+		boolean gotInstantHarmTwo = false;
 		for (int i = 0; i < count; i++) {
-			target.addEffect(new MobEffectInstance(pool.get(i), duration, 0));
+			Holder<MobEffect> effect = pool.get(i);
+			boolean instantHarm = effect.value() == net.minecraft.world.effect.MobEffects.INSTANT_DAMAGE.value();
+			// 瞬间伤害统一按 II 级(瞬间伤害2)施加
+			int amplifier = instantHarm ? 1 : 0;
+			if (instantHarm) {
+				gotInstantHarmTwo = true;
+			}
+			target.addEffect(new MobEffectInstance(effect, instantHarm ? 1 : duration, amplifier));
 		}
+		return new Result(count, gotInstantHarmTwo);
 	}
+
+	/** 一次音波的效果结算结果 */
+	public record Result(int count, boolean instantHarmTwo) {
+	}
+
 }

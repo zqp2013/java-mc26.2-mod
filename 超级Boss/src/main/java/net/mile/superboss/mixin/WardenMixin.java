@@ -1,5 +1,6 @@
 package net.mile.superboss.mixin;
 
+import net.mile.superboss.Advancements;
 import net.mile.superboss.SuperBossConfig;
 import net.mile.superboss.WardenBossBars;
 import net.minecraft.core.Holder;
@@ -31,6 +32,24 @@ import java.util.List;
 public abstract class WardenMixin {
 	@Unique
 	private int superboss$chargeReadyTick;
+
+	@Unique
+	private boolean superboss$announcedSummon = false;
+
+	/** 坚守者刚登场 → 给附近玩家发"『宿管』来了" */
+	@Inject(method = "customServerAiStep", at = @At("HEAD"))
+	private void superboss$announceWarden(ServerLevel serverLevel, CallbackInfo ci) {
+		Warden self = (Warden) (Object) this;
+		if (superboss$announcedSummon || !self.isAlive()) {
+			return;
+		}
+		superboss$announcedSummon = true;
+		for (ServerPlayer player : serverLevel.players()) {
+			if (player.distanceToSqr(self) <= 64.0 * 64.0) {
+				Advancements.grant(player, "summon_warden");
+			}
+		}
+	}
 
 	@Redirect(method = "createAttributes",
 			at = @At(value = "INVOKE",

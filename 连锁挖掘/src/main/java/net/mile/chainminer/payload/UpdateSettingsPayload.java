@@ -7,7 +7,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /** 客户端 → 服务端:更新连锁挖掘设置。 */
-public record UpdateSettingsPayload(int max, boolean vacuumToPlayer) implements CustomPacketPayload {
+public record UpdateSettingsPayload(int max, boolean vacuumToPlayer, boolean warnWrongTier) implements CustomPacketPayload {
 	public static final CustomPacketPayload.Type<UpdateSettingsPayload> TYPE =
 			new CustomPacketPayload.Type<>(ChainMinerMod.id("update_settings"));
 
@@ -17,10 +17,11 @@ public record UpdateSettingsPayload(int max, boolean vacuumToPlayer) implements 
 	private static void write(RegistryFriendlyByteBuf buf, UpdateSettingsPayload payload) {
 		buf.writeVarInt(payload.max);
 		buf.writeBoolean(payload.vacuumToPlayer);
+		buf.writeBoolean(payload.warnWrongTier);
 	}
 
 	private static UpdateSettingsPayload read(RegistryFriendlyByteBuf buf) {
-		return new UpdateSettingsPayload(buf.readVarInt(), buf.readBoolean());
+		return new UpdateSettingsPayload(buf.readVarInt(), buf.readBoolean(), buf.readBoolean());
 	}
 
 	@Override

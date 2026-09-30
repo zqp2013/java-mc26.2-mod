@@ -6,7 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;
 
-/** 两个动态贴图(小地图 128×128 / 大地图 640×640),懒创建,常驻复用 */
+/** 两个动态贴图(小地图按最大边长分配 / 大地图 640×640),懒创建,常驻复用 */
 public final class MinimapTextures {
 	public static final Identifier MINIMAP_ID = MinimapClient.id("dynamic/minimap");
 	public static final Identifier BIGMAP_ID = MinimapClient.id("dynamic/bigmap");
@@ -14,7 +14,8 @@ public final class MinimapTextures {
 	/** 玩家方向箭头贴图(箭头朝上,渲染时按朝向旋转) */
 	public static final Identifier ARROW_ID = MinimapClient.id("textures/gui/arrow.png");
 
-	public static final int MINIMAP_SIZE = 128;
+	/** 小地图贴图的最大边长(实际绘制 hudSize 见 MinimapStore,贴图一次分配永不重建) */
+	public static final int MINIMAP_MAX = 160;
 	/** 大地图贴图的最大边长(实际绘制区域 mapPx <= 这个值,贴图一次分配永不重建) */
 	public static final int BIGMAP_MAX = 640;
 
@@ -29,7 +30,7 @@ public final class MinimapTextures {
 	/** 必须在渲染线程调用(HUD/Screen 渲染路径里) */
 	public static NativeImage minimap() {
 		if (minimap == null) {
-			minimapImage = new NativeImage(MINIMAP_SIZE, MINIMAP_SIZE, false);
+			minimapImage = new NativeImage(MINIMAP_MAX, MINIMAP_MAX, false);
 			minimap = new DynamicTexture(() -> "mile minimap", minimapImage);
 			Minecraft.getInstance().getTextureManager().register(MINIMAP_ID, minimap);
 		}

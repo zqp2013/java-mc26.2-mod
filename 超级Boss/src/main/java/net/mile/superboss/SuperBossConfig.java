@@ -72,14 +72,18 @@ public final class SuperBossConfig {
 	public static final int WITHER_REGEN_DELAY = 200;
 	/** 每秒回复的最大生命百分比(0.005 = 0.5%) */
 	public static final float WITHER_REGEN_PERCENT_PER_SECOND = 0.005F;
-	/** 召唤凋灵骷髅的间隔(刻) */
-	public static final int WITHER_SUMMON_INTERVAL = 100;
+	/** 召唤凋灵骷髅的间隔(刻,400 = 20 秒) */
+	public static final int WITHER_SUMMON_INTERVAL = 400;
 	/** 每次召唤数量 */
-	public static final int WITHER_SUMMON_COUNT = 2;
+	public static final int WITHER_SUMMON_COUNT = 5;
 	/** 场上凋灵骷髅上限 */
-	public static final int WITHER_SKELETON_CAP = 6;
+	public static final int WITHER_SKELETON_CAP = 10;
+	/** 一次齐射发射的头颅数 */
+	public static final int WITHER_SKULL_VOLLEY_COUNT = 3;
 	/** 骷髅头爆炸半径倍率(原版 1.0 格 → 2.0 格) */
 	public static final float WITHER_SKULL_BLAST_MULTIPLIER = 2.0F;
+	/** 骷髅头爆炸额外直接伤害(≈伤害翻倍) */
+	public static final float WITHER_SKULL_EXTRA_DAMAGE = 6.0F;
 	/** 骷髅头额外击退强度 */
 	public static final float WITHER_SKULL_KNOCKBACK = 2.2F;
 
@@ -92,9 +96,9 @@ public final class SuperBossConfig {
 	public static final double WARDEN_MAX_HEALTH = 1000.0;
 	/** 血条可见范围(格) */
 	public static final double WARDEN_BOSS_BAR_RANGE = 128.0;
-	/** 音波攻击附加负面效果数量下限/上限(随机 5-10 种) */
-	public static final int WARDEN_SONIC_EFFECT_MIN = 5;
-	public static final int WARDEN_SONIC_EFFECT_MAX = 10;
+	/** 音波攻击附加负面效果数量下限/上限(随机 1-5 种) */
+	public static final int WARDEN_SONIC_EFFECT_MIN = 1;
+	public static final int WARDEN_SONIC_EFFECT_MAX = 5;
 	/** 负面效果时长(刻):10-20 秒随机 */
 	public static final int WARDEN_SONIC_EFFECT_DURATION_BASE = 200;
 	public static final int WARDEN_SONIC_EFFECT_DURATION_BONUS = 200;

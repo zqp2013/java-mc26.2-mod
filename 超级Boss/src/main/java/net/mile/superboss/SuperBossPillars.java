@@ -43,6 +43,9 @@ public final class SuperBossPillars {
 			for (ServerPlayer player : level.players()) {
 				player.sendOverlayMessage(Component.literal(
 						"§5末影龙栖息时补全了末影柱!(水晶不会复活)"));
+				if (repairedBlocks > 0) {
+					Advancements.grant(player, "pillar_repair");
+				}
 			}
 		}
 	}

@@ -68,8 +68,15 @@ public final class RegionScanner {
 		lastCenterZ = Double.NaN;
 	}
 
-	/** 主线程调用:需要时启动一轮后台扫描 */
+	/** 主线程调用:需要时启动一轮以玩家为中心的后台扫描 */
 	public static void requestScan(Minecraft mc) {
+		if (mc.player != null) {
+			requestScan(mc, mc.player.getX(), mc.player.getZ());
+		}
+	}
+
+	/** 主线程调用:围绕指定中心扫描(大地图拖动看远处时,那边不在玩家中心的扫描半径内) */
+	public static void requestScan(Minecraft mc, double px, double pz) {
 		if (mc.player == null || mc.level == null) {
 			return;
 		}
@@ -80,8 +87,6 @@ public final class RegionScanner {
 		if (!mc.hasSingleplayerServer() || mc.getSingleplayerServer() == null) {
 			return;
 		}
-		double px = mc.player.getX();
-		double pz = mc.player.getZ();
 		if (!Double.isNaN(lastCenterX) && Math.hypot(px - lastCenterX, pz - lastCenterZ) < RESCAN_DISTANCE) {
 			return;
 		}

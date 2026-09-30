@@ -15,10 +15,12 @@ public class ChainMinerConfigScreen extends Screen {
 
 	private ConfigSlider slider;
 	private boolean vacuum;
+	private boolean warnTier;
 
 	public ChainMinerConfigScreen() {
 		super(Component.literal("连锁挖掘设置"));
 		this.vacuum = ChainMinerClientData.isVacuumToPlayer();
+		this.warnTier = ChainMinerClientData.isWarnWrongTier();
 	}
 
 	@Override
@@ -30,16 +32,24 @@ public class ChainMinerConfigScreen extends Screen {
 			this.vacuum = !this.vacuum;
 			button.setMessage(vacuumLabel());
 		}).bounds(centerX - 100, 68, 200, 20).build());
+		addRenderableWidget(Button.builder(warnTierLabel(), button -> {
+			this.warnTier = !this.warnTier;
+			button.setMessage(warnTierLabel());
+		}).bounds(centerX - 100, 96, 200, 20).build());
 		addRenderableWidget(Button.builder(Component.literal("撤销上次连锁"), button -> {
 			ChainMinerClient.sendUndo();
 			this.onClose();
-		}).bounds(centerX - 100, 96, 200, 20).build());
+		}).bounds(centerX - 100, 124, 200, 20).build());
 		addRenderableWidget(Button.builder(Component.literal("完成"), button -> this.onClose())
-				.bounds(centerX - 100, 124, 200, 20).build());
+				.bounds(centerX - 100, 152, 200, 20).build());
 	}
 
 	private Component vacuumLabel() {
 		return Component.literal("掉落物自动掉到脚下:" + (this.vacuum ? "开" : "关"));
+	}
+
+	private Component warnTierLabel() {
+		return Component.literal("提示挖掘等级不够:" + (this.warnTier ? "开" : "关"));
 	}
 
 	@Override
@@ -47,9 +57,9 @@ public class ChainMinerConfigScreen extends Screen {
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 		int centerX = this.width / 2;
 		graphics.centeredText(this.font, this.getTitle(), centerX, 22, WHITE);
-		graphics.centeredText(this.font, "潜行挖掘时连锁破坏同类方块", centerX, 150, GRAY);
-		graphics.centeredText(this.font, "Ctrl+右键打开本界面", centerX, 162, GRAY);
-		graphics.centeredText(this.font, "连锁会为工具保留至少 1 点耐久,撤销可恢复方块和掉落", centerX, 174, GRAY);
+		graphics.centeredText(this.font, "潜行挖掘时连锁破坏同类方块", centerX, 178, GRAY);
+		graphics.centeredText(this.font, "Ctrl+右键打开本界面", centerX, 190, GRAY);
+		graphics.centeredText(this.font, "连锁会为工具保留至少 1 点耐久,撤销可恢复方块和掉落", centerX, 202, GRAY);
 	}
 
 	@Override
@@ -57,7 +67,8 @@ public class ChainMinerConfigScreen extends Screen {
 		int value = this.slider != null ? this.slider.currentValue() : ChainMinerClientData.getMax();
 		ChainMinerClientData.setMax(value);
 		ChainMinerClientData.setVacuumToPlayer(this.vacuum);
-		ChainMinerClient.sendSettings(value, this.vacuum);
+		ChainMinerClientData.setWarnWrongTier(this.warnTier);
+		ChainMinerClient.sendSettings(value, this.vacuum, this.warnTier);
 		super.onClose();
 	}
 

@@ -147,6 +147,24 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity {
 
 	@Override
 	protected AbstractContainerMenu createMenu(int id, Inventory inventory) {
+		// 打开界面时按炉子等级发进度
+		if (inventory.player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+			switch (tier) {
+				case GOLD -> Advancements.grant(serverPlayer, "gold_open");
+				case DIAMOND -> {
+					if (furnaceLevel >= 5) {
+						Advancements.grant(serverPlayer, "diamond_lv5");
+					}
+				}
+				case NETHERITE -> {
+					if (furnaceLevel >= 10) {
+						Advancements.grant(serverPlayer, "netherite_lv10");
+					}
+				}
+				default -> {
+				}
+			}
+		}
 		return new SuperFurnaceMenu(tier.menuType, id, inventory, this, dataAccess, tier,
 				net.minecraft.world.inventory.ContainerLevelAccess.create(this.getLevel(), this.worldPosition));
 	}
@@ -272,6 +290,7 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity {
 				if (furnace.progress >= tier.cookTicks) {
 					furnace.progress = 0;
 					// 一批完成:每个参与槽位按分配数消耗并产出
+					int smelted = 0;
 					for (int i = 0; i < tier.inputSlots; i++) {
 						if (take[i] <= 0) {
 							continue;
@@ -283,6 +302,15 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity {
 						}
 						for (int n = 0; n < take[i]; n++) {
 							furnace.pushResult(results[i]);
+						}
+						smelted += take[i];
+					}
+					// 铜熔炉烧出第一批成品 → "快速熔炉"
+					if (tier == FurnaceTier.COPPER && smelted > 0) {
+						for (net.minecraft.server.level.ServerPlayer player : serverLevel.players()) {
+							if (player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 8.0 * 8.0) {
+								Advancements.grant(player, "copper_smelt");
+							}
 						}
 					}
 				}

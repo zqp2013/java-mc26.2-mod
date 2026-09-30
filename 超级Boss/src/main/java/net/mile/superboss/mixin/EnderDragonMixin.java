@@ -1,5 +1,6 @@
 package net.mile.superboss.mixin;
 
+import net.mile.superboss.Advancements;
 import net.mile.superboss.DragonBulletRain;
 import net.mile.superboss.DragonMinions;
 import net.mile.superboss.SuperBossConfig;
@@ -10,6 +11,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.PowerParticleOption;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -23,6 +25,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.List;
 
 /**
  * 超级末影龙:500 血 + 飞行中周期性朝附近玩家喷火球弹幕 + 每 15 秒一轮末影弹雨
@@ -188,6 +192,16 @@ public abstract class EnderDragonMixin {
 		if (SuperBossConfig.DRAGON_SUMMON_CLEAR_ON_DEATH && self.dragonDeathTime == 0
 				&& self.level() instanceof ServerLevel serverLevel) {
 			DragonMinions.dismissAll(serverLevel);
+		}
+	}
+
+	/** 被龙身撞飞的玩家 → "我飞天了" */
+	@Inject(method = "knockBack", at = @At("TAIL"))
+	private void superboss$trackDragonKnock(ServerLevel serverLevel, List<Entity> entities, CallbackInfo ci) {
+		for (Entity entity : entities) {
+			if (entity instanceof ServerPlayer player) {
+				Advancements.grant(player, "dragon_knock");
+			}
 		}
 	}
 

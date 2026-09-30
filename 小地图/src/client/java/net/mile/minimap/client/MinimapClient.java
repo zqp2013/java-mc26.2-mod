@@ -38,6 +38,10 @@ public class MinimapClient implements ClientModInitializer {
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player != null && client.level != null) {
+				// 检测钻进矿洞/回到地表,切换地图层(返回 true = 刚切层,触发重绘)
+				if (MapData.tickCaveMode(client.level, client.player)) {
+					MinimapHud.reset();
+				}
 				// 传送门切维度:清地形缓存,重新扫存档
 				if (MapData.dimensionChanged(client.level)) {
 					MapData.clear();

@@ -4,6 +4,7 @@
   "package": "net.mile.superdiamond.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "ItemEntityMixin",
     "LivingEntityAttributesMixin",
     "LivingEntityMixin"
   ],

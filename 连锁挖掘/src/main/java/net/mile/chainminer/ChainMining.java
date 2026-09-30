@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -106,6 +107,10 @@ public final class ChainMining {
 			}
 
 			Block target = state.getBlock();
+			// 设置开启且工具等级不够时,提醒这次连锁不会掉东西
+			if (settings.warnWrongTier() && !player.hasCorrectToolForDrops(state)) {
+				player.sendOverlayMessage(Component.literal("§c挖掘等级不够,这些方块不会掉落!"));
+			}
 			boolean[] moreRemain = new boolean[1];
 			List<BlockPos> toBreak = collectChain(serverLevel, pos, target, allowedTotal, moreRemain);
 
@@ -120,6 +125,13 @@ public final class ChainMining {
 
 			// 记录撤销快照:本次生成的掉落物实体(age==0 即本刻刚生成)
 			recordUndoSnapshot(serverPlayer, serverLevel, toBreak, brokenStates, toolItem, toolDamageBefore);
+
+			// 进度:连锁一次 / 累计数量 / 浅深层混合矿脉 / 多个钻石块
+			if (toBreak.size() >= 2) {
+				ChainMinerAdvancements.awardChain(serverPlayer, toBreak.size());
+				ChainMinerAdvancements.checkVeinTypes(serverPlayer, brokenStates);
+				ChainMinerAdvancements.checkDiamondBlocks(serverPlayer, brokenStates);
+			}
 
 			if (toBreak.size() >= 2) {
 				MutableComponent message = Component.literal("本次连锁了 " + toBreak.size() + " 个方块");
@@ -195,8 +207,15 @@ public final class ChainMining {
 			dropEntityIds.add(item.getId());
 			dropStacks.add(item.getItem().copy());
 		}
+		// 本次生成的经验球(撤销时要一并收回,防止刷经验)
+		List<Integer> orbEntityIds = new ArrayList<>();
+		int orbAmount = 0;
+		for (ExperienceOrb orb : level.getEntitiesOfClass(ExperienceOrb.class, region, o -> o.tickCount == 0)) {
+			orbEntityIds.add(orb.getId());
+			orbAmount += orb.getValue();
+		}
 		ChainMinerUndo.record(player, level, List.copyOf(broken), List.copyOf(brokenStates), dropEntityIds, dropStacks,
-				toolItem, toolDamageBefore);
+				orbEntityIds, orbAmount, toolItem, toolDamageBefore);
 	}
 
 	/** 按原版流程破坏一个方块(掉落按当前主手工具结算,经验正常掉落,工具消耗 1 点耐久),返回被破坏前的方块状态。vacuum 开启时掉落物改为生成在玩家脚边。 */

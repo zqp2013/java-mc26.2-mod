@@ -27,6 +27,7 @@ public final class ChainMinerConfig {
 	public static final int MAX = 400;
 	public static final int DEFAULT = 64;
 	public static final boolean DEFAULT_VACUUM = false;
+	public static final boolean DEFAULT_WARN_TIER = true;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ChainMinerMod.MOD_ID);
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("chainminer-settings.txt");
@@ -59,7 +60,9 @@ public final class ChainMinerConfig {
 					UUID playerId = UUID.fromString(parts[0]);
 					int max = Math.max(MIN, Math.min(MAX, Integer.parseInt(parts[1])));
 					boolean vacuum = parts.length >= 3 && Integer.parseInt(parts[2]) != 0;
-					SETTINGS_BY_PLAYER.put(playerId, new ChainSettings(max, vacuum));
+					// 第 4 列(提示挖掘等级不够)旧格式没有,按默认开处理
+					boolean warnTier = parts.length >= 4 ? Integer.parseInt(parts[3]) != 0 : DEFAULT_WARN_TIER;
+					SETTINGS_BY_PLAYER.put(playerId, new ChainSettings(max, vacuum, warnTier));
 				} catch (IllegalArgumentException ignored) {
 					// 跳过坏行
 				}
@@ -73,10 +76,11 @@ public final class ChainMinerConfig {
 		try {
 			Files.createDirectories(FILE.getParent());
 			List<String> lines = new ArrayList<>();
-			lines.add("# 连锁挖掘设置:每行一个玩家 <UUID> <每次最多连锁数> <掉落物掉到脚下:0|1>");
+			lines.add("# 连锁挖掘设置:每行一个玩家 <UUID> <每次最多连锁数> <掉落物掉到脚下:0|1> <提示挖掘等级不够:0|1>");
 			for (Map.Entry<UUID, ChainSettings> entry : SETTINGS_BY_PLAYER.entrySet()) {
 				ChainSettings settings = entry.getValue();
-				lines.add(entry.getKey() + " " + settings.max() + " " + (settings.vacuumToPlayer() ? 1 : 0));
+				lines.add(entry.getKey() + " " + settings.max() + " " + (settings.vacuumToPlayer() ? 1 : 0)
+						+ " " + (settings.warnWrongTier() ? 1 : 0));
 			}
 			Files.write(FILE, lines, StandardCharsets.UTF_8);
 		} catch (IOException e) {
@@ -85,7 +89,7 @@ public final class ChainMinerConfig {
 	}
 
 	private static ChainSettings defaults() {
-		return new ChainSettings(DEFAULT, DEFAULT_VACUUM);
+		return new ChainSettings(DEFAULT, DEFAULT_VACUUM, DEFAULT_WARN_TIER);
 	}
 
 	public static synchronized ChainSettings get(ServerPlayer player) {
@@ -94,9 +98,9 @@ public final class ChainMinerConfig {
 	}
 
 	/** 设置并返回按范围收敛后的值。 */
-	public static synchronized ChainSettings set(ServerPlayer player, int max, boolean vacuumToPlayer) {
+	public static synchronized ChainSettings set(ServerPlayer player, int max, boolean vacuumToPlayer, boolean warnWrongTier) {
 		load();
-		ChainSettings clamped = new ChainSettings(Math.max(MIN, Math.min(MAX, max)), vacuumToPlayer);
+		ChainSettings clamped = new ChainSettings(Math.max(MIN, Math.min(MAX, max)), vacuumToPlayer, warnWrongTier);
 		SETTINGS_BY_PLAYER.put(player.getUUID(), clamped);
 		save();
 		return clamped;

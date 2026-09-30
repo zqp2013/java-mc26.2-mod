@@ -2,6 +2,7 @@ package net.mile.superdiamond;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -28,6 +29,9 @@ public class SuperDiamondMod implements ModInitializer {
 		SuperAttributes.init();
 		SuperItems.init();
 		SuperBlocks.init();
+
+		// 每秒扫背包发进度
+		ServerTickEvents.END_SERVER_TICK.register(SuperDiamondProgress::tick);
 
 		// 战斗栏:全部装备
 		CreativeModeTabEvents.modifyOutputEvent(COMBAT_TAB).register(output -> {
