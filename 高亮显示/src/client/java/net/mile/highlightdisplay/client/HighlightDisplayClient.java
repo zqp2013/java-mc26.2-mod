@@ -1,6 +1,7 @@
 package net.mile.highlightdisplay.client;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
@@ -11,6 +12,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
@@ -61,6 +63,19 @@ public class HighlightDisplayClient implements ClientModInitializer {
 				client.player.sendSystemMessage(GREETING);
 			}
 		});
+
+		// 开屏推迟到 tick 末尾执行:在鼠标右键回调里直接 setScreen 会被 fabric-screen-api
+		// 的拖拽包装器撞上"未初始化"状态直接崩溃(连锁挖掘 2026-09-30 实测崩溃过);
+		// tick 上下文开屏是安全的(同小地图 MapScreen 的打开方式)
+		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			if (pendingScreen != null) {
+				Screen screen = pendingScreen;
+				pendingScreen = null;
+				if (client.player != null) {
+					client.gui.setScreen(screen);
+				}
+			}
+		});
 	}
 
 	/** 设置手势 = Ctrl+Shift 同按(纯 Ctrl+右键留给连锁挖掘) */
@@ -80,10 +95,11 @@ public class HighlightDisplayClient implements ClientModInitializer {
 				|| InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
 	}
 
+	/** 等下一 tick 再打开的界面(见 onInitializeClient 里的说明) */
+	private static Screen pendingScreen;
+
 	private static void openConfigScreen() {
-		// 注意:不能用 setScreenAndShow——它会立刻重渲染一帧,在游戏内输入处理中途重入渲染器会原生崩溃;
-		// 游戏内换界面要走 Gui.setScreen(下一帧自然渲染)
-		Minecraft.getInstance().gui.setScreen(new HighlightConfigScreen());
+		pendingScreen = new HighlightConfigScreen();
 	}
 
 	public static Identifier id(String path) {
