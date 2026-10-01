@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "MMM",
+    "MFM",
+    "MMM"
+  ],
+  "key": {
+    "M": "minecraft:iron_ingot",
+    "F": "superfurnace:copper_furnace"
+  },
+  "result": {
+    "id": "superfurnace:iron_furnace"
+  }
+}

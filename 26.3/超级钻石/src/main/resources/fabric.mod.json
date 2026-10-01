@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "superdiamond",
+	"version": "${version}",
+	"name": "超级钻石",
+	"description": "超级钻石与超级下界合金:更强大的装备、锻造升级与紫色护甲值!",
+	"authors": [
+		"qpzhou"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"icon": "assets/superdiamond/icon.png",
+	"environment": "*",
+	"mixins": [
+		"superdiamond.mixins.json"
+	],
+	"entrypoints": {
+		"main": [
+			"net.mile.superdiamond.SuperDiamondMod"
+		],
+		"client": [
+			"net.mile.superdiamond.client.SuperDiamondModClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

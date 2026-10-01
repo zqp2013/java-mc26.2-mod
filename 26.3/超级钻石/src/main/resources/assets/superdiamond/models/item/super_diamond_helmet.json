@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "superdiamond:item/super_diamond_helmet"
+  }
+}

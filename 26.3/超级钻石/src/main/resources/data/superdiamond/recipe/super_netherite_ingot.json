@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "N": "minecraft:netherite_block",
+    "G": "minecraft:gold_block"
+  },
+  "pattern": [
+    "NGN",
+    "G G",
+    "NGN"
+  ],
+  "result": {
+    "id": "superdiamond:super_netherite_ingot"
+  }
+}

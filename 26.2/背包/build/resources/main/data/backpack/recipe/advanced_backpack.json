@@ -1,0 +1,16 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"category": "misc",
+	"pattern": [
+		"MBM",
+		"MBM",
+		"MBM"
+	],
+	"key": {
+		"M": "minecraft:bundle",
+		"B": "backpack:normal_backpack"
+	},
+	"result": {
+		"id": "backpack:advanced_backpack"
+	}
+}

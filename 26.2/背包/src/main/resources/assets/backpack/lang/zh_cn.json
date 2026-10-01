@@ -1,0 +1,8 @@
+{
+	"item.backpack.normal_backpack": "普通背包",
+	"item.backpack.advanced_backpack": "高级背包",
+	"item.backpack.storage_terminal": "储存终端",
+	"tooltip.backpack.slots": "共 %s 格收纳空间",
+	"tooltip.backpack.unlimited": "每格没有堆叠上限(不可堆叠物品耐久相同才可堆叠)",
+	"gui.backpack.area": "%s · %s 格"
+}

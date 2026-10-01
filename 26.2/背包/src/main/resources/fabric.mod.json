@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "backpack",
+	"version": "${version}",
+	"name": "背包",
+	"description": "在物品栏增加一个背部背包栏位:普通背包 18 格、高级背包 45 格、储存终端 72 格且每格无堆叠上限(不可堆叠物品耐久相同才可堆叠)。按 E 直接查看背包空间。",
+	"authors": [
+		"qpzhou"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.mile.backpack.BackpackMod"
+		],
+		"client": [
+			"net.mile.backpack.client.BackpackClient"
+		]
+	},
+	"mixins": [
+		"backpack.mixins.json"
+	],
+	"accessWidener": "backpack.accesswidener",
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

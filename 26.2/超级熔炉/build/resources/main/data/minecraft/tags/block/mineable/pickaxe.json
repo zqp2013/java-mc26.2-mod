@@ -1,0 +1,9 @@
+{
+  "values": [
+    "superfurnace:copper_furnace",
+    "superfurnace:iron_furnace",
+    "superfurnace:gold_furnace",
+    "superfurnace:diamond_furnace",
+    "superfurnace:netherite_furnace"
+  ]
+}

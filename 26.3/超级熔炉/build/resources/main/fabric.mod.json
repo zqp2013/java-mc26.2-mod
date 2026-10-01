@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "superfurnace",
+	"version": "1.0.0",
+	"name": "超级熔炉",
+	"description": "五级熔炉升级链:铜熔炉(8s)→铁熔炉(5s)→金熔炉(5s,多槽)→钻石熔炉(4s,多槽)→下界合金熔炉(锻造台升级,3.5s,更多槽)。",
+	"authors": [
+		"qpzhou"
+	],
+	"contact": {},
+	"license": "CC0-1.0",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.mile.superfurnace.SuperFurnaceMod"
+		],
+		"client": [
+			"net.mile.superfurnace.client.SuperFurnaceClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

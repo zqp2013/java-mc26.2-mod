@@ -1,0 +1,23 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.5.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :
+Fabric Loom: 1.17.20
+Previous process has disowned the lock due to abrupt termination.
+Found existing cache lock file (ACQUIRED_PREVIOUS_OWNER_DISOWNED), rebuilding loom cache. This may have been caused by a failed or canceled build.
+Mod fabric-content-registries-v0 provided javadoc has mapping for net/minecraft/world/level/block/entity/DecoratedPotPatterns, without comment
+
+> Task :validateAccessWidener NO-SOURCE
+> Task :genCommonSourcesWithVineflower
+Decompile cache stats: 0 hits, 4849 misses
+
+> Task :genCommonSources
+
+> Task :genClientOnlySourcesWithVineflower
+Decompile cache stats: 0 hits, 2206 misses
+
+> Task :genClientOnlySources
+> Task :genSources
+
+BUILD SUCCESSFUL in 3m 28s
+2 actionable tasks: 2 executed
