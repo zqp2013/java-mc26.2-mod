@@ -2,7 +2,14 @@
 	"item.backpack.normal_backpack": "Backpack",
 	"item.backpack.advanced_backpack": "Advanced Backpack",
 	"item.backpack.storage_terminal": "Storage Terminal",
+	"item.backpack.super_storage_terminal": "Super Storage Terminal",
+	"item.backpack.crafting_terminal": "Crafting Terminal",
 	"tooltip.backpack.slots": "%s slots of storage",
 	"tooltip.backpack.unlimited": "No stack limit per slot (unstackable items stack only with equal durability)",
-	"gui.backpack.area": "%s · %s slots"
+	"tooltip.backpack.paged": "18 slots per page, searchable and paged",
+	"tooltip.backpack.damage_cap": "Damageable items cap at 100 per slot, durability averaged on merge",
+	"tooltip.backpack.crafting_1": "Worn on top of a storage terminal (equip a terminal first)",
+	"tooltip.backpack.crafting_2": "Press E for a 3x3 crafting grid with unlimited materials per slot",
+	"gui.backpack.area": "%s · %s slots",
+	"gui.backpack.search_hint": "Search items..."
 }

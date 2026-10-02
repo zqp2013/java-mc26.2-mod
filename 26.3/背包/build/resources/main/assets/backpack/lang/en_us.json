@@ -1,8 +1,0 @@
-{
-	"item.backpack.normal_backpack": "Backpack",
-	"item.backpack.advanced_backpack": "Advanced Backpack",
-	"item.backpack.storage_terminal": "Storage Terminal",
-	"tooltip.backpack.slots": "%s slots of storage",
-	"tooltip.backpack.unlimited": "No stack limit per slot (unstackable items stack only with equal durability)",
-	"gui.backpack.area": "%s · %s slots"
-}

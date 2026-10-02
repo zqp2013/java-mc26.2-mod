@@ -120,7 +120,7 @@ public final class ChainMining {
 
 			List<BlockState> brokenStates = new ArrayList<>(toBreak.size());
 			for (BlockPos chainPos : toBreak) {
-				brokenStates.add(breakBlock(serverLevel, serverPlayer, chainPos, settings.vacuumToPlayer()));
+				brokenStates.add(breakBlock(serverLevel, serverPlayer, chainPos));
 			}
 
 			// 记录撤销快照:本次生成的掉落物实体(age==0 即本刻刚生成)
@@ -218,8 +218,8 @@ public final class ChainMining {
 				orbEntityIds, orbAmount, toolItem, toolDamageBefore);
 	}
 
-	/** 按原版流程破坏一个方块(掉落按当前主手工具结算,经验正常掉落,工具消耗 1 点耐久),返回被破坏前的方块状态。vacuum 开启时掉落物改为生成在玩家脚边。 */
-	private static BlockState breakBlock(ServerLevel level, ServerPlayer player, BlockPos pos, boolean vacuum) {
+	/** 按原版流程破坏一个方块(掉落按当前主手工具结算,经验正常掉落,工具消耗 1 点耐久),返回被破坏前的方块状态。所有掉落物一律生成在玩家脚边。 */
+	private static BlockState breakBlock(ServerLevel level, ServerPlayer player, BlockPos pos) {
 		BlockState state = level.getBlockState(pos);
 		if (state.isAir()) {
 			return null;
@@ -243,17 +243,13 @@ public final class ChainMining {
 		boolean correctTool = player.hasCorrectToolForDrops(state);
 		tool.mineBlock(level, state, pos, player);
 		if (removed && correctTool) {
-			if (vacuum) {
-				// 与 Block.playerDestroy 等价,但掉落物生成在玩家脚边而不是方块处
-				player.causeFoodExhaustion(0.005F);
-				for (ItemStack drop : Block.getDrops(state, level, pos, blockEntity, player, toolCopy)) {
-					Block.popResource(level, player.blockPosition(), drop);
-				}
-				// 经验仍在方块处掉落(经验球会自动飞向附近的玩家)
-				state.spawnAfterBreak(level, pos, toolCopy, true);
-			} else {
-				block.playerDestroy(level, player, pos, afterDestroy, blockEntity, toolCopy);
+			// 与 Block.playerDestroy 等价,但掉落物一律生成在玩家脚边而不是方块处
+			player.causeFoodExhaustion(0.005F);
+			for (ItemStack drop : Block.getDrops(state, level, pos, blockEntity, player, toolCopy)) {
+				Block.popResource(level, player.blockPosition(), drop);
 			}
+			// 经验仍在方块处掉落(经验球会自动飞向附近的玩家)
+			state.spawnAfterBreak(level, pos, toolCopy, true);
 		}
 		return state;
 	}

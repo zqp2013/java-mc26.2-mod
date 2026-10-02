@@ -2,7 +2,14 @@
 	"item.backpack.normal_backpack": "普通背包",
 	"item.backpack.advanced_backpack": "高级背包",
 	"item.backpack.storage_terminal": "储存终端",
+	"item.backpack.super_storage_terminal": "超级储存终端",
+	"item.backpack.crafting_terminal": "合成终端",
 	"tooltip.backpack.slots": "共 %s 格收纳空间",
 	"tooltip.backpack.unlimited": "每格没有堆叠上限(不可堆叠物品耐久相同才可堆叠)",
-	"gui.backpack.area": "%s · %s 格"
+	"tooltip.backpack.paged": "每页 18 格,可搜索、可翻页",
+	"tooltip.backpack.damage_cap": "带耐久物品每格上限 100,堆叠时耐久取平均",
+	"tooltip.backpack.crafting_1": "穿戴在储存终端类背包上(需先装备终端)",
+	"tooltip.backpack.crafting_2": "按 E 打开 3x3 合成界面,每格材料不限数量",
+	"gui.backpack.area": "%s · %s 格",
+	"gui.backpack.search_hint": "搜索物品..."
 }

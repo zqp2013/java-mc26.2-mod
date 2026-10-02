@@ -1,9 +1,0 @@
-{
-  "type": "minecraft:smithing_transform",
-  "addition": "superdiamond:super_netherite_ingot",
-  "base": "superdiamond:super_diamond_pickaxe",
-  "result": {
-    "id": "superdiamond:super_netherite_pickaxe"
-  },
-  "template": "superdiamond:super_netherite_upgrade_smithing_template"
-}

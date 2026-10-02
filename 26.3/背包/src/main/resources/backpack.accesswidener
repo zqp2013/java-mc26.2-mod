@@ -1,3 +1,0 @@
-accessWidener v2 official
-# 合成结果刷新逻辑是 protected static,背包菜单直接复用
-accessible method net/minecraft/world/inventory/CraftingMenu slotChangedCraftingGrid (Lnet/minecraft/world/inventory/AbstractContainerMenu;Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/inventory/CraftingContainer;Lnet/minecraft/world/inventory/ResultContainer;Lnet/minecraft/world/item/crafting/RecipeHolder;)V

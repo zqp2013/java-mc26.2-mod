@@ -24,10 +24,14 @@ public class BackpackClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		// 三档背包各一个菜单类型,布局固定
+		// 每档背包各一个菜单类型(合成终端枚举本身没有菜单,它的两种 3x3 菜单单独注册)
 		for (BackpackType type : BackpackType.values()) {
-			MenuScreens.<BackpackMenu, BackpackScreen>register(type.menuType(), BackpackScreen::new);
+			if (type != BackpackType.CRAFTING && type.menuType() != null) {
+				MenuScreens.<BackpackMenu, BackpackScreen>register(type.menuType(), BackpackScreen::new);
+			}
 		}
+		MenuScreens.<BackpackMenu, BackpackScreen>register(BackpackMod.CRAFTING_STORAGE_MENU, BackpackScreen::new);
+		MenuScreens.<BackpackMenu, BackpackScreen>register(BackpackMod.CRAFTING_SUPER_MENU, BackpackScreen::new);
 
 		// 进世界时提示 zym制造
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {

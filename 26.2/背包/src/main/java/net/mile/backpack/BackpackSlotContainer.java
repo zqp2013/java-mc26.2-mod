@@ -1,23 +1,31 @@
 package net.mile.backpack;
 
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 背包装备栏位(1 格):直接映射到玩家身上的 EQUIPPED_BACKPACK 数据附件。
+ * 单格穿戴容器:直接映射到玩家身上的某个物品附件(EQUIPPED_BACKPACK 或 EQUIPPED_CRAFTING)。
  * 服务端读写附件;客户端只是接收菜单同步的假容器。
  * 装备变化通过 changeListener 通知菜单(换包后重载内容视图)。
  */
 public class BackpackSlotContainer implements Container {
 
 	private final Player owner;
+	private final AttachmentType<ItemStack> attachment;
 	private final Runnable changeListener;
 	/** 客户端本地缓存 */
 	private ItemStack clientStack = ItemStack.EMPTY;
 
 	public BackpackSlotContainer(Player owner, Runnable changeListener) {
+		this(owner, BackpackMod.EQUIPPED_BACKPACK, changeListener);
+	}
+
+	public BackpackSlotContainer(Player owner, AttachmentType<ItemStack> attachment, Runnable changeListener) {
 		this.owner = owner;
+		this.attachment = attachment;
 		this.changeListener = changeListener;
 	}
 
@@ -36,7 +44,7 @@ public class BackpackSlotContainer implements Container {
 		if (owner == null || owner.level().isClientSide()) {
 			return clientStack;
 		}
-		return owner.getAttachedOrElse(BackpackMod.EQUIPPED_BACKPACK, ItemStack.EMPTY);
+		return owner.getAttachedOrElse(this.attachment, ItemStack.EMPTY);
 	}
 
 	@Override
@@ -60,7 +68,7 @@ public class BackpackSlotContainer implements Container {
 	@Override
 	public void setItem(int index, ItemStack stack) {
 		if (owner != null && !owner.level().isClientSide()) {
-			owner.setAttached(BackpackMod.EQUIPPED_BACKPACK, stack);
+			owner.setAttached(this.attachment, stack);
 		} else {
 			clientStack = stack;
 		}

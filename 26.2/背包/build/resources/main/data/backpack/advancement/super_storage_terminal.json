@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "id": "backpack:super_storage_terminal"
+    },
+    "title": "超级储存终端",
+    "description": "获得 900 格的超级储存终端",
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "backpack:super_storage_terminal"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "unlocked"
+    ]
+  ],
+  "parent": "backpack:storage_terminal"
+}

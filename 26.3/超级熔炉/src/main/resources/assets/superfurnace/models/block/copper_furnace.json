@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/orientable",
-  "textures": {
-    "front": "superfurnace:block/copper_furnace_front",
-    "side": "superfurnace:block/copper_furnace_side",
-    "top": "superfurnace:block/copper_furnace_top"
-  }
-}

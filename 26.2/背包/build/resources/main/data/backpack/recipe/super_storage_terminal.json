@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "AAA",
+    "A A",
+    "AAA"
+  ],
+  "key": {
+    "A": "backpack:storage_terminal"
+  },
+  "result": {
+    "id": "backpack:super_storage_terminal"
+  }
+}

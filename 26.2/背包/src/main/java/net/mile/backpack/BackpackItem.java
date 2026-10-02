@@ -22,8 +22,16 @@ public class BackpackItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display,
 			Consumer<Component> tooltip, TooltipFlag flag) {
+		if (this.type == BackpackType.CRAFTING) {
+			tooltip.accept(Component.translatable("tooltip.backpack.crafting_1").withStyle(ChatFormatting.GRAY));
+			tooltip.accept(Component.translatable("tooltip.backpack.crafting_2").withStyle(ChatFormatting.GRAY));
+			return;
+		}
 		tooltip.accept(Component.translatable("tooltip.backpack.slots", this.type.slots).withStyle(ChatFormatting.GRAY));
-		if (this.type.unlimited()) {
+		if (this.type == BackpackType.SUPER) {
+			tooltip.accept(Component.translatable("tooltip.backpack.paged").withStyle(ChatFormatting.GRAY));
+			tooltip.accept(Component.translatable("tooltip.backpack.damage_cap").withStyle(ChatFormatting.GRAY));
+		} else if (this.type.unlimited()) {
 			tooltip.accept(Component.translatable("tooltip.backpack.unlimited").withStyle(ChatFormatting.GRAY));
 		}
 	}

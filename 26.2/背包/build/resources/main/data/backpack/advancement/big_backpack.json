@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "id": "backpack:advanced_backpack"
+    },
+    "title": "大背包",
+    "description": "获得高级背包",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "backpack:advanced_backpack"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "unlocked"
+    ]
+  ],
+  "parent": "backpack:root"
+}

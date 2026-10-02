@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "id": "backpack:crafting_terminal"
+    },
+    "title": "储存加合成",
+    "description": "穿戴超级储存终端的同时穿戴合成终端",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "unlocked"
+    ]
+  ],
+  "parent": "backpack:super_storage_terminal"
+}

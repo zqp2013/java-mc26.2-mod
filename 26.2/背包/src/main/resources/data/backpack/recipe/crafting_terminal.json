@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "backpack:storage_terminal",
+    "minecraft:crafting_table"
+  ],
+  "result": {
+    "id": "backpack:crafting_terminal"
+  }
+}

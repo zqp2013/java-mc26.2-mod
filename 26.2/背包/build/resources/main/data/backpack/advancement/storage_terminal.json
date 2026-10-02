@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "id": "backpack:storage_terminal"
+    },
+    "title": "储存终端",
+    "description": "获得储存终端",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "backpack:storage_terminal"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "unlocked"
+    ]
+  ],
+  "parent": "backpack:big_backpack"
+}

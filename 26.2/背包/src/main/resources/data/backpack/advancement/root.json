@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "id": "backpack:normal_backpack"
+    },
+    "title": "小背包",
+    "description": "获得一个普通背包",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "background": "minecraft:textures/gui/advancements/backgrounds/stone.png"
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "backpack:normal_backpack"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "unlocked"
+    ]
+  ]
+}

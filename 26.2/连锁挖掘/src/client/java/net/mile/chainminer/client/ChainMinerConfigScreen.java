@@ -8,18 +8,16 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/** 连锁挖掘设置界面:滑条调整每次最多连锁数,开关控制掉落物是否自动掉到脚下。 */
+/** 连锁挖掘设置界面:滑条调整每次最多连锁数,开关控制挖掘等级提示。掉落物固定全部掉到玩家脚下。 */
 public class ChainMinerConfigScreen extends Screen {
 	private static final int WHITE = 0xFFFFFF;
 	private static final int GRAY = 0xA8A8A8;
 
 	private ConfigSlider slider;
-	private boolean vacuum;
 	private boolean warnTier;
 
 	public ChainMinerConfigScreen() {
 		super(Component.literal("连锁挖掘设置"));
-		this.vacuum = ChainMinerClientData.isVacuumToPlayer();
 		this.warnTier = ChainMinerClientData.isWarnWrongTier();
 	}
 
@@ -28,24 +26,16 @@ public class ChainMinerConfigScreen extends Screen {
 		int centerX = this.width / 2;
 		this.slider = new ConfigSlider(centerX - 100, 40, 200, 20, ChainMinerClientData.getMax());
 		addRenderableWidget(this.slider);
-		addRenderableWidget(Button.builder(vacuumLabel(), button -> {
-			this.vacuum = !this.vacuum;
-			button.setMessage(vacuumLabel());
-		}).bounds(centerX - 100, 68, 200, 20).build());
 		addRenderableWidget(Button.builder(warnTierLabel(), button -> {
 			this.warnTier = !this.warnTier;
 			button.setMessage(warnTierLabel());
-		}).bounds(centerX - 100, 96, 200, 20).build());
+		}).bounds(centerX - 100, 68, 200, 20).build());
 		addRenderableWidget(Button.builder(Component.literal("撤销上次连锁"), button -> {
 			ChainMinerClient.sendUndo();
 			this.onClose();
-		}).bounds(centerX - 100, 124, 200, 20).build());
+		}).bounds(centerX - 100, 96, 200, 20).build());
 		addRenderableWidget(Button.builder(Component.literal("完成"), button -> this.onClose())
-				.bounds(centerX - 100, 152, 200, 20).build());
-	}
-
-	private Component vacuumLabel() {
-		return Component.literal("掉落物自动掉到脚下:" + (this.vacuum ? "开" : "关"));
+				.bounds(centerX - 100, 124, 200, 20).build());
 	}
 
 	private Component warnTierLabel() {
@@ -66,9 +56,9 @@ public class ChainMinerConfigScreen extends Screen {
 	public void onClose() {
 		int value = this.slider != null ? this.slider.currentValue() : ChainMinerClientData.getMax();
 		ChainMinerClientData.setMax(value);
-		ChainMinerClientData.setVacuumToPlayer(this.vacuum);
 		ChainMinerClientData.setWarnWrongTier(this.warnTier);
-		ChainMinerClient.sendSettings(value, this.vacuum, this.warnTier);
+		// vacuum 字段固定传 true(掉落物永远掉脚下,底层字段保留是为了兼容旧配置/网络格式)
+		ChainMinerClient.sendSettings(value, true, this.warnTier);
 		super.onClose();
 	}
 
