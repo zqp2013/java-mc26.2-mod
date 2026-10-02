@@ -1,15 +1,18 @@
 package net.mile.superfurnace;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
@@ -30,9 +33,13 @@ import java.util.Optional;
  * 燃料:单个物品的烧炼成本恒为 200 刻(原版 BURN_TIME_STANDARD),
  * 炉子再快、同时烧得再多,一根木头也只烧 1.5 个、一个煤只烧 8 个。
  */
-public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity {
+public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity implements WorldlyContainer {
 	private final FurnaceTier tier;
 	private NonNullList<ItemStack> items;
+	/** 各面漏斗能访问的槽位(原版熔炉语义):上面=输入槽、侧面=燃料槽、下面=成品槽(+燃料槽给空桶) */
+	private final int[] slotsForUp;
+	private final int[] slotsForDown;
+	private final int[] slotsForSides;
 	/** 剩余燃烧时间(刻,按并行物品数倍速消耗) */
 	private int burnTime;
 	/** 当前这份燃料的总燃烧时间(用于火焰比例显示) */
@@ -80,6 +87,13 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity {
 		this.tier = tier;
 		this.items = NonNullList.withSize(tier.totalSlots, ItemStack.EMPTY);
 		this.furnaceLevel = 1;
+		this.slotsForUp = slotRange(tier.inputBase(), tier.inputSlots);
+		this.slotsForSides = slotRange(tier.fuelBase(), tier.fuelSlots);
+		// 下面除了成品槽,还带上燃料槽:岩浆桶烧完留下的空桶能被下面的漏斗抽走(原版行为)
+		int[] outputs = slotRange(tier.outputBase(), tier.outputSlots);
+		this.slotsForDown = java.util.stream.IntStream.concat(
+				java.util.stream.IntStream.of(outputs),
+				java.util.stream.IntStream.of(slotsForSides)).toArray();
 	}
 
 	public FurnaceTier tier() {
@@ -137,6 +151,52 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity {
 	@Override
 	public void clearContent() {
 		items.clear();
+	}
+
+	// ---- WorldlyContainer:漏斗/发射器自动交互 ----
+
+	@Override
+	public int[] getSlotsForFace(Direction side) {
+		if (side == Direction.DOWN) {
+			return slotsForDown;
+		}
+		return side == Direction.UP ? slotsForUp : slotsForSides;
+	}
+
+	/** 漏斗塞东西:上面进输入槽(随便什么),侧面进燃料槽(只收燃料),下面不许塞(成品槽拒收) */
+	@Override
+	public boolean canPlaceItem(int index, ItemStack stack) {
+		if (index >= tier.outputBase()) {
+			return false;
+		}
+		if (index < tier.inputBase()) {
+			return this.level != null && this.level.fuelValues().isFuel(stack);
+		}
+		return true;
+	}
+
+	@Override
+	public boolean canPlaceItemThroughFace(int index, ItemStack stack, Direction side) {
+		return canPlaceItem(index, stack);
+	}
+
+	/** 漏斗吸东西:只有成品(以及燃料槽里岩浆桶留下的空桶)能被吸走,原料和燃料都吸不走 */
+	@Override
+	public boolean canTakeItemThroughFace(int index, ItemStack stack, Direction side) {
+		if (index >= tier.outputBase()) {
+			return true;
+		}
+		// 燃料槽只放行空桶(岩浆桶烧完的剩余物),煤、木板、水桶这些统统不许漏斗碰
+		return index < tier.inputBase() && stack.is(Items.BUCKET);
+	}
+
+	/** [start, start+count) 的槽位下标数组 */
+	private static int[] slotRange(int start, int count) {
+		int[] slots = new int[count];
+		for (int i = 0; i < count; i++) {
+			slots[i] = start + i;
+		}
+		return slots;
 	}
 
 	@Override
