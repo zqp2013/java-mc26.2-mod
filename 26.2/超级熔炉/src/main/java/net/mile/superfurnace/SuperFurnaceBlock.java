@@ -1,7 +1,5 @@
 package net.mile.superfurnace;
 
-import com.mojang.serialization.MapCodec;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -43,11 +41,7 @@ public class SuperFurnaceBlock extends BaseEntityBlock {
 		registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(LIT, Boolean.FALSE));
 	}
 
-	@Override
-	protected MapCodec<? extends BaseEntityBlock> codec() {
-		// 数据包序列化用不到自定义方块参数,给个固定编解码器即可
-		return MapCodec.unit(this);
-	}
+	// 26.3: BaseEntityBlock 的 codec() 覆写要求已删除,方块序列化不再走每方块 MapCodec
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

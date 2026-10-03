@@ -5,6 +5,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.mile.backpack.BackpackMenu;
 import net.mile.backpack.payload.SetBackpackViewPayload;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -16,8 +18,6 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
-
-import org.lwjgl.glfw.GLFW;
 
 /**
  * 背包物品栏界面:上半部分 = 原版生存物品栏布局(盔甲/合成 2x2/玩家模型/玩家背包),
@@ -55,8 +55,11 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 			this.searchBox.setHint(Component.translatable("gui.backpack.search_hint"));
 			this.searchBox.setValue(this.search);
 			this.searchBox.setResponder(s -> {
+				boolean wasSearching = !this.search.trim().isEmpty();
 				this.search = s;
-				this.setPage(0);
+				// 清空搜索 = 回到上次浏览的页,打字 = 从第一页开始
+				this.setPage(s.trim().isEmpty() && wasSearching
+						? TerminalPages.load(this.menu.type) : 0);
 			});
 			this.addRenderableWidget(this.searchBox);
 			this.prevPage = Button.builder(Component.literal("<"), b -> this.setPage(this.page - 1))
@@ -65,6 +68,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 					.bounds(x + w - 20, y + 176, 16, 14).build();
 			this.addRenderableWidget(this.prevPage);
 			this.addRenderableWidget(this.nextPage);
+			this.page = TerminalPages.load(this.menu.type); // 记住上次的页
 			this.refreshView(true);
 		}
 	}
@@ -74,10 +78,13 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 		this.refreshView(true);
 	}
 
-	/** 本地应用视图;send 时把页码/搜索词同步给服务端 */
+	/** 本地应用视图;send 时把页码/搜索词同步给服务端;没在搜索时记住页码 */
 	private void refreshView(boolean send) {
 		this.cachedPages = Math.max(1, this.menu.pageCount(this.search));
 		this.page = Math.max(0, Math.min(this.page, this.cachedPages - 1));
+		if (this.search.trim().isEmpty()) {
+			TerminalPages.save(this.menu.type, this.page);
+		}
 		this.lastStateId = this.menu.getStateId();
 		this.menu.applyView(this.page, this.search);
 		if (send) {
@@ -136,7 +143,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 		}
 	}
 
-	private static void drawSlotBox(GuiGraphicsExtractor gui, int x, int y) {
+	/** 终端面板(TerminalOverlay)也用这个槽位盒画法 */
+	public static void drawSlotBox(GuiGraphicsExtractor gui, int x, int y) {
 		gui.fill(x, y, x + 18, y + 18, 0xFF373737);
 		gui.fill(x + 1, y + 1, x + 17, y + 17, 0xFF8B8B8B);
 		gui.fill(x + 1, y + 1, x + 17, y + 2, 0xFFFFFFFF);
@@ -180,7 +188,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 	@Override
 	public boolean keyPressed(KeyEvent event) {
 		if (this.searchBox != null && this.searchBox.isFocused()) {
-			if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+			if (event.key() == InputConstants.KEY_ESCAPE) {
 				this.searchBox.setFocused(false);
 				return true;
 			}

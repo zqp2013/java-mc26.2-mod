@@ -2,9 +2,13 @@
 	"required": true,
 	"package": "net.mile.backpack.mixin",
 	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"ItemEntityMixin"
+	],
 	"client": [
 		"MinecraftMixin",
-		"GuiGraphicsExtractorMixin"
+		"GuiGraphicsExtractorMixin",
+		"AbstractContainerScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

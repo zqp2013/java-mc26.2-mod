@@ -72,7 +72,7 @@ public abstract class WitherSkullMixin implements VolleySkull {
 			living.push(direction.x * strength,
 					direction.y * strength * 0.6 + 0.25 * strength,
 					direction.z * strength);
-			living.hurtMarked = true;
+			living.syncVelocity = true; // 26.3: hurtMarked 改名 syncVelocity
 			// 爆炸范围翻倍的同时追加直接伤害
 			living.hurtServer(serverLevel, extraDamage, SuperBossConfig.WITHER_SKULL_EXTRA_DAMAGE);
 			if (living instanceof ServerPlayer player) {

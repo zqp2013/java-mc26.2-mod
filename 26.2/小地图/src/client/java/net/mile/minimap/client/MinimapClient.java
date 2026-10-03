@@ -9,7 +9,6 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,9 +27,10 @@ public class MinimapClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		// 按键:默认 P 打开大地图,可在 控件设置 里改
+		// (26.3: KEYSYM 改名 KEYBOARD,GLFW 常量换成 InputConstants 自带的)
 		KeyMapping.Category category = KeyMapping.Category.register(id("main"));
 		openMapKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-				"key.minimap.open_map", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_P, category));
+				"key.minimap.open_map", InputConstants.Type.KEYBOARD, InputConstants.KEY_P, category));
 
 		// 右上角小地图 HUD
 		HudElementRegistry.attachElementAfter(VanillaHudElements.MISC_OVERLAYS, id("minimap"),

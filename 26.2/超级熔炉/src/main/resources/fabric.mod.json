@@ -18,9 +18,12 @@
 			"net.mile.superfurnace.client.SuperFurnaceClient"
 		]
 	},
+	"mixins": [
+		"superfurnace.mixins.json"
+	],
 	"depends": {
 		"fabricloader": ">=0.19.5",
-		"minecraft": "~26.2",
+		"minecraft": "~26.3",
 		"java": ">=25",
 		"fabric-api": "*"
 	}

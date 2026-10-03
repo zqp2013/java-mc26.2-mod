@@ -106,7 +106,7 @@ public abstract class WardenMixin {
 		self.playSound(SoundEvents.WARDEN_ROAR, 3.0F, 0.7F);
 		// 大运冲撞:把对方往正上方创飞 + 21 点伤害
 		attacker.push(0.0, SuperBossConfig.WARDEN_CHARGE_LAUNCH, 0.0);
-		attacker.hurtMarked = true;
+		attacker.syncVelocity = true; // 26.3: hurtMarked 改名 syncVelocity
 		attacker.hurtServer(serverLevel, serverLevel.damageSources().mobAttack(self), SuperBossConfig.WARDEN_CHARGE_DAMAGE);
 	}
 }

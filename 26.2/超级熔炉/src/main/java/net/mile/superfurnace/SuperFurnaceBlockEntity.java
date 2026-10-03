@@ -3,6 +3,7 @@ package net.mile.superfurnace;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -13,16 +14,17 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CookingFuel;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
-import net.minecraft.world.level.block.entity.FuelValues;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ResolvableInt;
 
 import java.util.Optional;
 
@@ -170,7 +172,8 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity implements
 			return false;
 		}
 		if (index < tier.inputBase()) {
-			return this.level != null && this.level.fuelValues().isFuel(stack);
+			// 26.3: 燃料判定改为物品组件 COOKING_FUEL,不再要 Level
+			return stack.has(DataComponents.COOKING_FUEL);
 		}
 		return true;
 	}
@@ -258,7 +261,6 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity implements
 			SuperFurnaceBlockEntity furnace) {
 		ServerLevel serverLevel = (ServerLevel) level;
 		FurnaceTier tier = furnace.tier;
-		FuelValues fuels = level.fuelValues();
 		boolean changed = false;
 
 		// 1. 查每个非空输入槽的配方和成品
@@ -312,8 +314,10 @@ public class SuperFurnaceBlockEntity extends BaseContainerBlockEntity implements
 		if (burning > 0 && furnace.burnTime <= 0) {
 			for (int f = 0; f < tier.fuelSlots; f++) {
 				ItemStack fuel = furnace.items.get(tier.fuelBase() + f);
-				if (!fuel.isEmpty() && fuels.isFuel(fuel)) {
-					furnace.burnDuration = fuels.burnDuration(fuel);
+				if (!fuel.isEmpty() && fuel.has(DataComponents.COOKING_FUEL)) {
+					// 26.3: 烧炼时长来自物品组件,数字可用战利品表上下文解析
+					furnace.burnDuration = ResolvableInt.getFromItem(fuel, DataComponents.COOKING_FUEL,
+							CookingFuel::burnTime, furnace.getLootContext(serverLevel), 0);
 					furnace.burnTime = furnace.burnDuration;
 					// 26.2: 剩余物 API 在 Item 上,返回模板;没有剩余物(如煤)返回 null!
 					ItemStackTemplate remainder = fuel.getItem().getCraftingRemainder();

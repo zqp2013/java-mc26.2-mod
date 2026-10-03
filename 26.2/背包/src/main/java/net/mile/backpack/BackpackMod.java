@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 import net.mile.backpack.payload.OpenBackpackPayload;
 import net.mile.backpack.payload.SetBackpackViewPayload;
+import net.mile.backpack.payload.TerminalClickPayload;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Registry;
@@ -118,6 +119,11 @@ public class BackpackMod implements ModInitializer {
 			}
 		});
 
+		// 箱子/熔炉等界面侧边的终端面板:点击 → 服务端对着终端组件存取
+		PayloadTypeRegistry.serverboundPlay().register(TerminalClickPayload.TYPE, TerminalClickPayload.STREAM_CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(TerminalClickPayload.TYPE, (payload, context) ->
+				TerminalTransfer.handle(context.player(), payload.slot(), payload.right(), payload.shift()));
+
 		// 手持背包/合成终端右键 = 穿戴(旧装备回背包;合成终端要求身上有终端类背包)
 		UseItemCallback.EVENT.register((player, level, hand) -> {
 			if (level.isClientSide()) {
@@ -164,9 +170,11 @@ public class BackpackMod implements ModInitializer {
 		if (stack.isEmpty()) {
 			return;
 		}
-		if (!keepInventory) {
-			player.drop(stack, false);
+		if (keepInventory) {
+			// 死亡不掉落:什么都不动,附件挂了 copyOnDeath(),重生时原样带走
+			return;
 		}
+		player.spawnAtLocation(player.level(), stack);
 		player.setAttached(attachment, ItemStack.EMPTY);
 	}
 
@@ -180,7 +188,7 @@ public class BackpackMod implements ModInitializer {
 		BackpackType type = BackpackType.fromItem(equipped.getItem());
 		if (type == null || !type.isTerminal()) {
 			player.setAttached(EQUIPPED_CRAFTING, ItemStack.EMPTY);
-			player.getInventory().placeItemBackInInventory(crafting);
+			player.getInventory().placeItemBackInInventory(crafting, net.minecraft.util.Prediction.SERVER_ONLY);
 			player.sendSystemMessage(Component.literal("已自动脱下合成终端(身上没有储存终端类背包)")
 					.withStyle(ChatFormatting.YELLOW));
 		}
@@ -199,7 +207,7 @@ public class BackpackMod implements ModInitializer {
 
 		ItemStack previous = player.getAttachedOrElse(EQUIPPED_BACKPACK, ItemStack.EMPTY);
 		if (!previous.isEmpty()) {
-			player.getInventory().placeItemBackInInventory(previous);
+			player.getInventory().placeItemBackInInventory(previous, net.minecraft.util.Prediction.SERVER_ONLY);
 		}
 		player.setAttached(EQUIPPED_BACKPACK, backpack);
 		// 换上的不是终端类背包 → 合成终端失去支撑,自动脱下
@@ -228,7 +236,7 @@ public class BackpackMod implements ModInitializer {
 
 		ItemStack previous = player.getAttachedOrElse(EQUIPPED_CRAFTING, ItemStack.EMPTY);
 		if (!previous.isEmpty()) {
-			player.getInventory().placeItemBackInInventory(previous);
+			player.getInventory().placeItemBackInInventory(previous, net.minecraft.util.Prediction.SERVER_ONLY);
 		}
 		player.setAttached(EQUIPPED_CRAFTING, crafting);
 		player.sendOverlayMessage(Component.translatable(crafting.getItem().getDescriptionId())
@@ -237,7 +245,8 @@ public class BackpackMod implements ModInitializer {
 
 	private static Item register(String path, BackpackType type) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, id(path));
-		Item item = new BackpackItem(type, new Item.Properties().stacksTo(1).setId(key));
+		// fireResistant:背包类物品像下界合金一样岩浆烧不毁,死亡掉进岩浆也能捡回来
+		Item item = new BackpackItem(type, new Item.Properties().stacksTo(1).fireResistant().setId(key));
 		return net.minecraft.core.Registry.register(BuiltInRegistries.ITEM, key, item);
 	}
 

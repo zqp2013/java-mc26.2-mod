@@ -22,8 +22,10 @@ import java.util.List;
  * 背包物品栏菜单:复刻原版生存物品栏(合成 2x2 + 盔甲 + 玩家背包),
  * 额外加一个背包装备栏位和背包内容区(18/45/72/900 格,布局随档位)。
  * 合成终端变体 = 3x3 合成格(每格不限数量,shift 点产物一口气全合成完)。
- * 终端类内容槽没有堆叠上限;超级储存终端的带耐久物品每格上限 100,合并时耐久取平均;
- * 所有取出的路径都会被截到原版安全数量,防止 >99 的堆进入玩家背包/掉落物(磁盘编解码会炸)。
+ * 终端类内容槽没有堆叠上限,一次可以整堆(>64)拿到手上;放进玩家背包时原版每格最多 64。
+ * 超级储存终端的带耐久物品每格上限 100,合并时耐久取平均;
+ * 所有离开菜单的出口(丢界面外/Ctrl+Q/数字键交换/关界面)都按原版安全数量分块,
+ * 防止 >99 的堆进入玩家背包/掉落物(磁盘编解码会炸)。
  */
 public class BackpackMenu extends AbstractCraftingMenu {
 
@@ -99,10 +101,10 @@ public class BackpackMenu extends AbstractCraftingMenu {
 		this.addSlot(new BackpackEquipSlot(this.equipContainer, 0, craftingGrid ? 98 : 77, craftingGrid ? 8 : 26, craftingGrid));
 		this.addStandardInventorySlots(playerInventory, 8, 84);
 
-		// 背包内容区
+		// 背包内容区(分页档位把全部槽折进前 rows() 行,每页复用同一块网格)
 		for (int i = 0; i < type.slots; i++) {
 			int col = i % type.columns;
-			int row = i / type.columns;
+			int row = (i / type.columns) % type.rows();
 			this.addSlot(new BackpackContentSlot(this, this.content, i,
 					BackpackType.CONTENT_X + col * 18, type.contentY() + row * 18, type));
 		}
@@ -293,7 +295,7 @@ public class BackpackMenu extends AbstractCraftingMenu {
 				return;
 			}
 		}
-		if (input == ContainerInput.SWAP && this.isValidSlotIndex(index) && index >= this.contentStart && index < this.contentEnd) {
+		if (input == ContainerInput.SWAP && this.isBigStackSlot(index)) {
 			Slot slot = this.slots.get(index);
 			ItemStack stack = slot.getItem();
 			if (!stack.isEmpty() && stack.getCount() > takeCap(stack)) {
@@ -305,7 +307,48 @@ public class BackpackMenu extends AbstractCraftingMenu {
 				return; // 其他交换情形(副手/非空快捷栏)对大堆一律拒绝
 			}
 		}
+		// 大堆(>64)拿在手上时,丢到界面外必须分块丢,否则会生成超 99 的掉落物实体(磁盘编解码会炸)
+		if (index == SLOT_CLICKED_OUTSIDE && input == ContainerInput.PICKUP && button == 0) {
+			ItemStack carried = this.getCarried();
+			if (!carried.isEmpty() && carried.getCount() > takeCap(carried)) {
+				this.setCarried(ItemStack.EMPTY);
+				while (!carried.isEmpty()) {
+					player.spawnAtLocation((ServerLevel) player.level(),
+							carried.split(Math.min(takeCap(carried), carried.getCount())));
+				}
+				this.broadcastChanges();
+				return;
+			}
+		}
+		// Ctrl+Q 丢整堆同理:按原版安全数量分块丢(单击 Q 丢 1 个走原版路径,安全)
+		if (input == ContainerInput.THROW && button == 1 && this.isBigStackSlot(index)) {
+			Slot slot = this.slots.get(index);
+			if (!slot.getItem().isEmpty() && slot.getItem().getCount() > takeCap(slot.getItem())
+					&& player.canDropItems()) {
+				while (slot.hasItem()) {
+					ItemStack current = slot.getItem();
+					int amount = Math.min(current.getCount(), takeCap(current));
+					player.spawnAtLocation((ServerLevel) player.level(), slot.remove(amount));
+					if (amount >= current.getCount()) {
+						break;
+					}
+				}
+				this.broadcastChanges();
+				return;
+			}
+		}
 		super.clicked(index, button, input, player);
+	}
+
+	/** 可能出现 >64 大堆的槽:终端内容格(终端类)或合成终端的合成格 */
+	private boolean isBigStackSlot(int index) {
+		if (!this.isValidSlotIndex(index)) {
+			return false;
+		}
+		if (index >= this.contentStart && index < this.contentEnd) {
+			return true;
+		}
+		return this.craftingGrid && index >= CRAFT_START && index < this.craftEnd;
 	}
 
 	/** 装进背包内容区(合并 → 空格),终端遵循各自的合并规则 */
@@ -411,7 +454,8 @@ public class BackpackMenu extends AbstractCraftingMenu {
 		return (matchIndices(q).size() + BackpackType.PAGE_SLOTS - 1) / BackpackType.PAGE_SLOTS;
 	}
 
-	/** 应用当前视图:标记本页/搜索命中的内容槽为可见(其余槽 isActive=false,不渲染不可点)。坐标不动——渲染和命中都会跳过非激活槽。 */
+	/** 应用当前视图:标记本页/搜索命中的内容槽为可见(其余槽 isActive=false,不渲染不可点),
+	 *  并把可见槽重排到面板网格里(搜索命中项从左上角紧凑排布)。 */
 	public void applyView(int page, String search) {
 		if (!this.type.paged()) {
 			return;
@@ -434,6 +478,13 @@ public class BackpackMenu extends AbstractCraftingMenu {
 		}
 		for (int real : shown) {
 			this.viewPositionOfSlot[real] = 1;
+		}
+		// 可见槽按顺序铺进面板网格:普通翻页就是原位置(构造时已折行),
+		// 搜索则让命中项从左上角排起不留空洞(x/y final,靠 AW mutable 挪)
+		for (int pos = 0; pos < shown.size(); pos++) {
+			Slot slot = this.slots.get(this.contentStart + shown.get(pos));
+			slot.x = BackpackType.CONTENT_X + (pos % this.type.columns) * 18;
+			slot.y = this.type.contentY() + (pos / this.type.columns) * 18;
 		}
 	}
 
@@ -466,10 +517,33 @@ public class BackpackMenu extends AbstractCraftingMenu {
 
 	@Override
 	public void removed(Player player) {
+		// 手上还拿着大堆(>64)就关界面:先按原版安全数量分块塞回背包,
+		// 免得原版清理逻辑把整堆当一个掉落物丢出去(超 99 的实体磁盘编解码会炸)
+		ItemStack carried = this.getCarried();
+		if (!carried.isEmpty() && carried.getCount() > takeCap(carried) && !player.level().isClientSide()) {
+			this.setCarried(ItemStack.EMPTY);
+			while (!carried.isEmpty()) {
+				ItemStack chunk = carried.split(Math.min(takeCap(carried), carried.getCount()));
+				player.getInventory().placeItemBackInInventory(chunk, net.minecraft.util.Prediction.SERVER_ONLY);
+			}
+		}
 		super.removed(player);
 		this.resultSlots.clearContent();
 		if (!player.level().isClientSide()) {
-			this.clearContainer(player, this.craftSlots);
+			if (this.craftingGrid) {
+				// 合成格里可能有大堆(每格不限数量):分块还给玩家,
+				// 免得 clearContainer 把装不下的整堆当一个掉落物实体丢出去
+				for (int i = 0; i < this.craftSlots.getContainerSize(); i++) {
+					ItemStack stack = this.craftSlots.removeItemNoUpdate(i);
+					while (!stack.isEmpty()) {
+						player.getInventory().placeItemBackInInventory(
+								stack.split(Math.min(takeCap(stack), stack.getCount())),
+								net.minecraft.util.Prediction.SERVER_ONLY);
+					}
+				}
+			} else {
+				this.clearContainer(player, this.craftSlots);
+			}
 			if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
 				BackpackAdvancements.checkTerminal(serverPlayer);
 			}
@@ -479,6 +553,12 @@ public class BackpackMenu extends AbstractCraftingMenu {
 	@Override
 	public boolean stillValid(Player player) {
 		return true;
+	}
+
+	/** 双击收集(PICKUP_ALL)不许碰产物格:那条路不走 onTake,会把没消耗材料的产物直接收走(复制) */
+	@Override
+	public boolean canTakeItemForPickAll(ItemStack stack, Slot slot) {
+		return slot.container != this.resultSlots && super.canTakeItemForPickAll(stack, slot);
 	}
 
 	@Override
@@ -518,7 +598,7 @@ public class BackpackMenu extends AbstractCraftingMenu {
 		}
 	}
 
-	/** 背包内容槽:终端无堆叠上限(超级终端带耐久物品 100),取出数量截到原版安全值 */
+	/** 背包内容槽:终端无堆叠上限(超级终端带耐久物品 100),一次可以整堆拿到手上(>64) */
 	public static class BackpackContentSlot extends Slot {
 		private final BackpackMenu menu;
 		private final BackpackType type;
@@ -551,15 +631,6 @@ public class BackpackMenu extends AbstractCraftingMenu {
 				return stack.getMaxStackSize();
 			}
 			return this.type == BackpackType.SUPER && stack.isDamageableItem() ? 100 : Integer.MAX_VALUE;
-		}
-
-		@Override
-		public ItemStack remove(int amount) {
-			if (this.type.unlimited()) {
-				ItemStack current = this.getItem();
-				return super.remove(Math.min(amount, takeCap(current)));
-			}
-			return super.remove(amount);
 		}
 	}
 

@@ -12,17 +12,13 @@ import net.mile.chainminer.payload.UndoPayload;
 import net.mile.chainminer.payload.UpdateSettingsPayload;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.blaze3d.platform.Window;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-
-import org.lwjgl.glfw.GLFW;
 
 public class ChainMinerClient implements ClientModInitializer {
 	/** 进世界时给玩家的署名提示 */
@@ -78,16 +74,15 @@ public class ChainMinerClient implements ClientModInitializer {
 		});
 	}
 
+	// 26.3: GLFW 不再暴露给模组,键码常量和轮询都走 InputConstants(不再要窗口句柄)
 	private static boolean isShiftKeyDown() {
-		Window window = Minecraft.getInstance().getWindow();
-		return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_SHIFT)
-				|| InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_SHIFT);
+		return InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+				|| InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
 	}
 
 	private static boolean isCtrlKeyDown() {
-		Window window = Minecraft.getInstance().getWindow();
-		return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL)
-				|| InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
+		return InputConstants.isKeyDown(InputConstants.KEY_LCONTROL)
+				|| InputConstants.isKeyDown(InputConstants.KEY_RCONTROL);
 	}
 
 	/** 等下一 tick 再打开的界面(见 onInitializeClient 里的说明) */

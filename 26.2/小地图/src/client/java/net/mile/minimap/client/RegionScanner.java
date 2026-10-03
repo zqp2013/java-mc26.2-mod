@@ -200,9 +200,9 @@ public final class RegionScanner {
 				return;
 			}
 			SerializableChunkData data = SerializableChunkData.parse(dimInfo, factory, tag);
-			// noise 之前的半成品区块还没有方块,跳过;之后(features/light 未完成)已有地形,照画
+			// TERRAIN(26.2 叫 NOISE)之前的半成品区块还没有方块,跳过;之后(features/light 未完成)已有地形,照画
 			ChunkStatus status = data.chunkStatus();
-			if (status == null || status.getIndex() < ChunkStatus.NOISE.getIndex()) {
+			if (status == null || status.getIndex() < ChunkStatus.TERRAIN.getIndex()) {
 				if (DEBUG_PARSE) {
 					System.out.println("[minimap] 半成品区块跳过 " + cx + "," + cz + " -> " + status);
 				}

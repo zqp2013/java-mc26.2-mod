@@ -1,5 +1,6 @@
 package net.mile.superfurnace;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -179,7 +180,8 @@ public class SuperFurnaceMenu extends AbstractContainerMenu {
 	}
 
 	private static boolean isFuel(Level level, ItemStack stack) {
-		return level.fuelValues().isFuel(stack);
+		// 26.3: 燃料判定改为物品组件 COOKING_FUEL;参数留着保持调用方不变
+		return stack.has(DataComponents.COOKING_FUEL);
 	}
 
 	private static boolean isSmeltable(Level level, ItemStack stack) {
